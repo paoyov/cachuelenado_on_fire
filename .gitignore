@@ -1,0 +1,41 @@
+# Archivos de configuración local
+config/local.php
+
+# Directorio de uploads (excepto .gitkeep)
+uploads/*
+!uploads/.gitkeep
+
+# Logs
+logs/*
+!logs/.gitkeep
+
+# Archivos temporales
+*.tmp
+*.log
+*.cache
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Composer
+vendor/
+composer.lock
+
+# Node modules (si se usa)
+node_modules/
+package-lock.json
+
+# Archivos de backup
+*.bak
+*.backup
+*.sql.gz
+
