@@ -9,7 +9,7 @@ $title = 'Inicio';
             <p>Conectamos clientes con maestros de oficio profesionales y de confianza en Lima</p>
             <div class="hero-buttons">
                 <a href="<?php echo BASE_URL; ?>buscar" class="btn btn-primary btn-lg">Buscar Maestros</a>
-                <a href="<?php echo BASE_URL; ?>register" class="btn btn-outline btn-lg">Soy Maestro</a>
+                <a href="<?php echo BASE_URL; ?>register" class="btn btn-primary btn-lg">Soy Maestro</a>
             </div>
         </div>
     </div>

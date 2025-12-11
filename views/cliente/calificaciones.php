@@ -39,116 +39,68 @@ $title = 'Mis Calificaciones';
         </div>
     </div>
 
-    <!-- Sección de Calificaciones Recientes (Estáticas) -->
+    <!-- Sección de Calificaciones Recientes -->
     <h3 class="mb-3">Calificaciones Recientes</h3>
     <div class="ratings-grid">
-        <!-- Card Estática 1 -->
-        <div class="rating-card">
-            <div class="rating-header">
-                <div class="maestro-info">
-                    <img src="https://ui-avatars.com/api/?name=Juan+Perez&background=random" alt="Maestro" class="maestro-img">
-                    <div>
-                        <h4>Juan Perez</h4>
-                        <span class="service-type">Gasfitería</span>
+        <?php if (empty($calificaciones)): ?>
+            <div class="col-12">
+                <p class="text-muted text-center">No has realizado ninguna calificación aún.</p>
+            </div>
+        <?php else: ?>
+            <?php foreach ($calificaciones as $cal): ?>
+            <div class="rating-card">
+                <div class="rating-header">
+                    <div class="maestro-info">
+                        <?php 
+                            // Construct valid image URL
+                            $fotoUrl = 'https://ui-avatars.com/api/?name=' . urlencode($cal['maestro_nombre']);
+                            if (!empty($cal['maestro_foto'])) {
+                                // Check if it's already a full URL or needs base
+                                if (filter_var($cal['maestro_foto'], FILTER_VALIDATE_URL)) {
+                                    $fotoUrl = $cal['maestro_foto'];
+                                } else {
+                                    // Use UPLOAD_URL if it's a relative path stored by the system
+                                    // Assuming stored as 'perfiles/filename.jpg'
+                                    $fotoUrl = UPLOAD_URL . $cal['maestro_foto'];
+                                }
+                            }
+                        ?>
+                        <img src="<?php echo $fotoUrl; ?>" alt="Maestro" class="maestro-img" onerror="this.src='https://ui-avatars.com/api/?name=<?php echo urlencode($cal['maestro_nombre']); ?>'">
+                        <div>
+                            <h4><?php echo htmlspecialchars($cal['maestro_nombre']); ?></h4>
+                            <span class="service-type"><?php echo htmlspecialchars($cal['especialidad'] ?? 'General'); ?></span>
+                        </div>
+                    </div>
+                    <div class="rating-score">
+                        <?php 
+                            $promedio = ($cal['puntualidad'] + $cal['calidad'] + $cal['trato'] + $cal['limpieza']) / 4; 
+                        ?>
+                        <span class="score"><?php echo number_format($promedio, 1); ?></span>
+                        <div class="stars">
+                            <?php for($i=1; $i<=5; $i++): ?>
+                                <i class="<?php echo $i <= round($promedio) ? 'fas' : 'far'; ?> fa-star"></i>
+                            <?php endfor; ?>
+                        </div>
                     </div>
                 </div>
-                <div class="rating-score">
-                    <span class="score">4.8</span>
-                    <div class="stars">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star-half-alt"></i>
+                <div class="rating-body">
+                    <?php if (!empty($cal['comentario'])): ?>
+                        <p class="comentario">"<?php echo htmlspecialchars($cal['comentario']); ?>"</p>
+                    <?php endif; ?>
+                    <div class="rating-date">
+                        <i class="far fa-calendar-alt"></i> <?php echo date('d M Y', strtotime($cal['fecha_calificacion'])); ?>
                     </div>
                 </div>
-            </div>
-            <div class="rating-body">
-                <p class="comentario">"Excelente trabajo, llegó puntual y solucionó el problema de la fuga rápidamente. Muy recomendado."</p>
-                <div class="rating-date">
-                    <i class="far fa-calendar-alt"></i> 24 Nov 2023
-                </div>
-            </div>
-            <div class="rating-footer">
-                <div class="rating-breakdown">
-                    <span title="Puntualidad"><i class="far fa-clock"></i> 5.0</span>
-                    <span title="Calidad"><i class="fas fa-tools"></i> 5.0</span>
-                    <span title="Trato"><i class="far fa-smile"></i> 4.0</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card Estática 2 -->
-        <div class="rating-card">
-            <div class="rating-header">
-                <div class="maestro-info">
-                    <img src="https://ui-avatars.com/api/?name=Maria+Lopez&background=random" alt="Maestro" class="maestro-img">
-                    <div>
-                        <h4>Maria Lopez</h4>
-                        <span class="service-type">Limpieza</span>
-                    </div>
-                </div>
-                <div class="rating-score">
-                    <span class="score">5.0</span>
-                    <div class="stars">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="rating-body">
-                <p class="comentario">"Impecable servicio. Dejó todo reluciente y fue muy amable en todo momento. Volveré a contratarla."</p>
-                <div class="rating-date">
-                    <i class="far fa-calendar-alt"></i> 20 Nov 2023
-                </div>
-            </div>
-            <div class="rating-footer">
-                <div class="rating-breakdown">
-                    <span title="Puntualidad"><i class="far fa-clock"></i> 5.0</span>
-                    <span title="Calidad"><i class="fas fa-tools"></i> 5.0</span>
-                    <span title="Trato"><i class="far fa-smile"></i> 5.0</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card Estática 3 -->
-        <div class="rating-card">
-            <div class="rating-header">
-                <div class="maestro-info">
-                    <img src="https://ui-avatars.com/api/?name=Carlos+Ruiz&background=random" alt="Maestro" class="maestro-img">
-                    <div>
-                        <h4>Carlos Ruiz</h4>
-                        <span class="service-type">Electricidad</span>
-                    </div>
-                </div>
-                <div class="rating-score">
-                    <span class="score">4.5</span>
-                    <div class="stars">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star-half-alt"></i>
+                <div class="rating-footer">
+                    <div class="rating-breakdown">
+                        <span title="Puntualidad"><i class="far fa-clock"></i> <?php echo number_format($cal['puntualidad'], 1); ?></span>
+                        <span title="Calidad"><i class="fas fa-tools"></i> <?php echo number_format($cal['calidad'], 1); ?></span>
+                        <span title="Trato"><i class="far fa-smile"></i> <?php echo number_format($cal['trato'], 1); ?></span>
                     </div>
                 </div>
             </div>
-            <div class="rating-body">
-                <p class="comentario">"Buen electricista, sabe lo que hace. Un poco serio pero muy profesional en su trabajo."</p>
-                <div class="rating-date">
-                    <i class="far fa-calendar-alt"></i> 15 Nov 2023
-                </div>
-            </div>
-            <div class="rating-footer">
-                <div class="rating-breakdown">
-                    <span title="Puntualidad"><i class="far fa-clock"></i> 4.0</span>
-                    <span title="Calidad"><i class="fas fa-tools"></i> 5.0</span>
-                    <span title="Trato"><i class="far fa-smile"></i> 4.0</span>
-                </div>
-            </div>
-        </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -273,17 +225,81 @@ $title = 'Mis Calificaciones';
     color: #ff6b35;
 }
 
-/* Modal trigger mock function */
-<script>
-function openRatingModal() {
-    // En una implementación real, esto abriría el modal con datos pre-cargados o vacíos
-    // Como estamos reutilizando el modal existente que espera datos de un trabajo,
-    // aquí solo mostramos el modal para propósitos de demostración visual.
-    document.getElementById('ratingModal').style.display = 'block';
-    
-    // Mock data para visualización
-    document.getElementById('rating-master-name').textContent = 'Maestro Ejemplo';
-    document.getElementById('rating-master-img').src = 'https://ui-avatars.com/api/?name=Maestro+Ejemplo';
-}
-</script>
+
 </style>
+
+<!-- Modal trigger mock function -->
+<script>
+    // Pass Maestros Data from PHP to JS
+    // Ensure it's a valid array even if PHP returns null/false
+    // maestrosData is already defined in calificar_modal.php
+
+    function openRatingModal() {
+        try {
+            const select = document.getElementById('maestro-select');
+            if (!select) {
+                console.error('Element #maestro-select not found');
+                alert('Error: No se encontró el selector de maestros.');
+                return;
+            }
+
+            select.innerHTML = '<option value="">-- Buscar Maestro --</option>';
+            
+            if (!Array.isArray(maestrosData)) {
+                 console.error('maestrosData is not an array', maestrosData);
+                 alert('Error de datos: No se pudieron cargar los maestros.');
+                 return;
+            }
+
+            // Populate Dropdown
+            maestrosData.forEach(m => {
+                const option = document.createElement('option');
+                option.value = m.id;
+                const name = m.nombre_completo || 'Maestro sin nombre';
+                option.textContent = name;
+                
+                option.setAttribute('data-name', name);
+                // Handle potential missing foto_perfil
+                let imgUrl = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name);
+                if (m.foto_perfil) {
+                    // Check if absolute URL
+                    if (m.foto_perfil.startsWith('http')) {
+                        imgUrl = m.foto_perfil;
+                    } else {
+                        imgUrl = '<?php echo UPLOAD_URL; ?>' + m.foto_perfil;
+                    }
+                }
+                option.setAttribute('data-img', imgUrl);
+                
+                select.appendChild(option);
+            });
+            
+            // Reset Fields
+            const maestroIdInput = document.getElementById('rating-maestro-id');
+            const trabajoIdInput = document.getElementById('rating-trabajo-id');
+            const form = document.getElementById('ratingForm');
+            const containerSelect = document.getElementById('maestro-selector-container');
+            const containerInfo = document.getElementById('maestro-info-container');
+            const modal = document.getElementById('ratingModal');
+
+            if(maestroIdInput) maestroIdInput.value = '';
+            if(trabajoIdInput) trabajoIdInput.value = '';
+            if(form) form.reset();
+            
+            // Show Select, Hide Static Info
+            if(containerSelect) containerSelect.style.display = 'block';
+            if(containerInfo) containerInfo.style.display = 'none';
+            
+            if(modal) {
+                // Using flex to ensure the CSS centering works correctly
+                modal.style.display = 'flex';
+            } else {
+                alert('Error: No se encontró el modal.');
+            }
+
+        } catch (e) {
+            console.error('Error opening modal:', e);
+            alert('Ocurrió un error al abrir el formulario: ' + e.message);
+        }
+    }
+</script>

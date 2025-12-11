@@ -4,92 +4,9 @@
  */
 
 class ApiController extends Controller {
-    public function enviarMensaje() {
-        header('Content-Type: application/json');
-        
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->json(['success' => false, 'message' => 'Método no permitido'], 405);
-        }
 
-        if (!isLoggedIn()) {
-            $this->json(['success' => false, 'message' => 'No autorizado'], 401);
-        }
 
-        // Determinar remitente y destinatarios
-        $enviado_por = isCliente() ? 'cliente' : (isMaestro() ? 'maestro' : null);
-        if ($enviado_por === null) {
-            $this->json(['success' => false, 'message' => 'No autorizado'], 401);
-        }
 
-        if ($enviado_por === 'cliente') {
-            $cliente_id = $_SESSION['usuario_id'];
-            $maestro_id = (int)($_POST['maestro_id'] ?? 0);
-        } else {
-            // remitente es maestro
-            $maestroModel = new Maestro($this->db);
-            $maestro = $maestroModel->getByUsuarioId($_SESSION['usuario_id']);
-            if (!$maestro) $this->json(['success' => false, 'message' => 'Maestro no encontrado'], 400);
-            $maestro_id = $maestro['id'];
-            $cliente_id = (int)($_POST['cliente_id'] ?? 0);
-        }
-
-        $mensaje = isset($_POST['mensaje']) ? sanitize($_POST['mensaje']) : null;
-        $tipo = 'texto';
-        $adjunto_path = null;
-
-        // Soporte stickers (referencia a assets/stickers, valor seguro)
-        if (!empty($_POST['sticker'])) {
-            $sticker = basename($_POST['sticker']);
-            $adjunto_path = 'stickers/' . $sticker;
-            $tipo = 'sticker';
-        }
-
-        // Soporte subida de archivo (imagen/video)
-        if (!empty($_FILES['adjunto']) && $_FILES['adjunto']['error'] === UPLOAD_ERR_OK) {
-            $upload = $this->uploadFile($_FILES['adjunto'], 'mensajes', ALLOWED_MEDIA_TYPES);
-            if (!$upload['success']) {
-                $this->json(['success' => false, 'message' => 'Error al subir adjunto: ' . $upload['message']]);
-            }
-            $adjunto_path = $upload['path'];
-            // Determinar tipo por mime
-            $mime = mime_content_type(UPLOAD_PATH . $upload['path']);
-            if (strpos($mime, 'image/') === 0) $tipo = 'imagen';
-            elseif (strpos($mime, 'video/') === 0) $tipo = 'video';
-        }
-
-        if ($cliente_id <= 0 || $maestro_id <= 0) {
-            $this->json(['success' => false, 'message' => 'IDs inválidos']);
-        }
-
-        $mensajeModel = new Mensaje($this->db);
-
-        $inserted = $mensajeModel->send($cliente_id, $maestro_id, $mensaje, $enviado_por, $adjunto_path, $tipo);
-        if ($inserted) {
-            $this->json(['success' => true, 'message' => 'Mensaje enviado', 'id' => $inserted]);
-        }
-
-        $this->json(['success' => false, 'message' => 'Error al enviar mensaje']);
-    }
-
-    public function obtenerMensajes() {
-        header('Content-Type: application/json');
-        
-        if (!isLoggedIn()) {
-            $this->json(['success' => false, 'message' => 'No autorizado'], 401);
-        }
-
-        $cliente_id = (int)($_GET['cliente_id'] ?? 0);
-        $maestro_id = (int)($_GET['maestro_id'] ?? 0);
-
-        if ($cliente_id <= 0 || $maestro_id <= 0) {
-            $this->json(['success' => false, 'message' => 'Datos incompletos']);
-        }
-
-        $mensajeModel = new Mensaje($this->db);
-        $mensajes = $mensajeModel->getConversation($cliente_id, $maestro_id);
-
-        $this->json(['success' => true, 'mensajes' => $mensajes]);
-    }
 
     public function buscar() {
         header('Content-Type: application/json');
@@ -197,30 +114,6 @@ class ApiController extends Controller {
         $this->json(['success' => false, 'message' => 'No se pudo marcar la notificación']);
     }
 
-    public function marcarMensajesLeidos() {
-        header('Content-Type: application/json');
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->json(['success' => false, 'message' => 'Método no permitido'], 405);
-        }
-        if (!isLoggedIn()) {
-            $this->json(['success' => false, 'message' => 'No autorizado'], 401);
-        }
 
-        $maestro_id = (int)($_POST['maestro_id'] ?? 0);
-        if ($maestro_id <= 0) {
-            $this->json(['success' => false, 'message' => 'ID maestro inválido']);
-        }
-
-        $mensajeModel = new Mensaje($this->db);
-        // Marcar como leídos los mensajes enviados por el maestro al cliente
-        $enviado_por = isCliente() ? 'maestro' : 'cliente';
-        $cliente_id = $_SESSION['usuario_id'];
-
-        if ($mensajeModel->markAsRead($cliente_id, $maestro_id, $enviado_por)) {
-            $this->json(['success' => true]);
-        }
-
-        $this->json(['success' => false, 'message' => 'No se pudieron marcar los mensajes']);
-    }
 }
 

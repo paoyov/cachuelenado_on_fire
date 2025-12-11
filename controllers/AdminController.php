@@ -153,12 +153,18 @@ class AdminController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $usuario_id = (int)($_POST['usuario_id'] ?? 0);
             $accion = $_POST['accion'] ?? '';
-            if ($usuario_id > 0 && in_array($accion, ['ver', 'suspender', 'eliminar'])) {
+            if ($usuario_id > 0 && in_array($accion, ['ver', 'suspender', 'activar', 'eliminar'])) {
                 if ($accion === 'suspender') {
                     if ($this->usuarioModel->suspend($usuario_id)) {
                         $_SESSION['success'] = 'Usuario suspendido correctamente.';
                     } else {
                         $_SESSION['error'] = 'No se pudo suspender el usuario.';
+                    }
+                } elseif ($accion === 'activar') {
+                    if ($this->usuarioModel->activate($usuario_id)) {
+                        $_SESSION['success'] = 'Usuario activado correctamente.';
+                    } else {
+                        $_SESSION['error'] = 'No se pudo activar el usuario.';
                     }
                 } elseif ($accion === 'eliminar') {
                     if ($this->usuarioModel->delete($usuario_id)) {
@@ -196,34 +202,22 @@ class AdminController extends Controller {
     }
 
     public function reportes() {
-        // Procesar acciones POST para cambiar el estado del reporte
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $reporte_id = (int)($_POST['reporte_id'] ?? 0);
-            $accion = $_POST['accion'] ?? '';
-
-            if ($reporte_id > 0 && $accion === 'cambiar_estado') {
-                $nuevo_estado = sanitize($_POST['nuevo_estado'] ?? 'pendiente');
-                $updateQuery = "UPDATE reportes SET estado = :estado WHERE id = :id";
-                $stmtUp = $this->db->prepare($updateQuery);
-                $stmtUp->bindParam(':estado', $nuevo_estado);
-                $stmtUp->bindParam(':id', $reporte_id);
-                if ($stmtUp->execute()) {
-                    $_SESSION['success'] = 'Estado del reporte actualizado correctamente.';
-                } else {
-                    $_SESSION['error'] = 'No se pudo actualizar el estado del reporte.';
-                }
-            }
-
-            redirect('admin/reportes');
-        }
-
-        $query = "SELECT r.*, 
-                         u1.nombre_completo as reportado_por_nombre,
-                         u2.nombre_completo as reportado_a_nombre
-                  FROM reportes r
-                  INNER JOIN usuarios u1 ON r.reportado_por = u1.id
-                  INNER JOIN usuarios u2 ON r.reportado_a = u2.id
-                  ORDER BY r.fecha_reporte DESC";
+        // Obtener maestros rechazados con motivo de rechazo
+        $query = "SELECT m.id as maestro_id,
+                         m.motivo_rechazo,
+                         m.estado_perfil,
+                         m.fecha_validacion,
+                         u.id as usuario_id,
+                         u.nombre_completo,
+                         u.email,
+                         u.fecha_registro,
+                         u.foto_perfil,
+                         admin.nombre_completo as validado_por_nombre
+                  FROM maestros m
+                  INNER JOIN usuarios u ON m.usuario_id = u.id
+                  LEFT JOIN usuarios admin ON m.validado_por = admin.id
+                  WHERE m.estado_perfil = 'rechazado' AND m.motivo_rechazo IS NOT NULL
+                  ORDER BY m.fecha_validacion DESC, u.fecha_registro DESC";
 
         $stmt = $this->db->prepare($query);
         $stmt->execute();
@@ -231,37 +225,33 @@ class AdminController extends Controller {
 
         // Export CSV
         if (isset($_GET['export']) && $_GET['export'] === 'csv') {
-            // CSV filename
-            $filename = 'reportes_' . date('Ymd_His') . '.csv';
+            $filename = 'reportes_maestros_rechazados_' . date('Ymd_His') . '.csv';
             header('Content-Encoding: UTF-8');
             header('Content-Type: text/csv; charset=UTF-8');
             header('Content-Disposition: attachment; filename="' . $filename . '"');
 
-            // Output BOM for Excel
             echo "\xEF\xBB\xBF";
             $output = fopen('php://output', 'w');
-            // Header row
-            fputcsv($output, ['ID', 'Reportado por', 'Reportado a', 'Tipo', 'Motivo', 'Estado', 'Fecha']);
+            fputcsv($output, ['ID Maestro', 'Nombre del Usuario', 'Email', 'Motivo de Rechazo', 'Estado', 'Fecha de Rechazo', 'Fecha de Registro']);
 
             foreach ($reportes as $r) {
                 fputcsv($output, [
-                    $r['id'],
-                    $r['reportado_por_nombre'],
-                    $r['reportado_a_nombre'],
-                    $r['tipo'],
-                    $r['motivo'],
-                    $r['estado'],
-                    $r['fecha_reporte']
+                    $r['maestro_id'],
+                    $r['nombre_completo'],
+                    $r['email'],
+                    $r['motivo_rechazo'],
+                    ucfirst($r['estado_perfil']),
+                    $r['fecha_validacion'] ? date('d/m/Y H:i', strtotime($r['fecha_validacion'])) : 'N/A',
+                    date('d/m/Y', strtotime($r['fecha_registro']))
                 ]);
             }
             fclose($output);
             exit;
         }
 
-        // Print view (usable to Save as PDF from browser)
+        // Print view
         if (isset($_GET['export']) && $_GET['export'] === 'print') {
             $data = ['reportes' => $reportes];
-            // Render a print-friendly view
             $this->view('admin/reportes-print', $data);
             return;
         }
@@ -426,6 +416,45 @@ class AdminController extends Controller {
         }
 
         redirect('admin/perfil');
+    }
+    public function getMaestroDetails() {
+        if (!isset($_GET['id'])) {
+            echo json_encode(['error' => 'ID no proporcionado']);
+            return;
+        }
+
+        $maestro_id = (int)$_GET['id'];
+        $maestro = $this->maestroModel->getById($maestro_id);
+
+        if (!$maestro) {
+            echo json_encode(['error' => 'Maestro no encontrado']);
+            return;
+        }
+
+        $usuario = $this->usuarioModel->getById($maestro['usuario_id']);
+        $especialidades = $this->maestroModel->getEspecialidades($maestro_id);
+        
+        $documentoModel = new DocumentoMaestro($this->db);
+        $documentos = $documentoModel->getByMaestro($maestro_id);
+        
+        // Debug: Log the query
+        error_log("Fetching documents for maestro_id: " . $maestro_id);
+        error_log("Documents found: " . count($documentos));
+        error_log("Documents data: " . print_r($documentos, true));
+
+        $data = [
+            'maestro' => $maestro,
+            'usuario' => $usuario,
+            'especialidades' => $especialidades,
+            'documentos' => $documentos,
+            'debug' => [
+                'maestro_id' => $maestro_id,
+                'document_count' => count($documentos)
+            ]
+        ];
+
+        header('Content-Type: application/json');
+        echo json_encode($data);
     }
 }
 

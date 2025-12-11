@@ -24,8 +24,12 @@ define('APP_PORT', getenv('APP_PORT') ?: ($_SERVER['SERVER_PORT'] ?? 80));
 define('APP_PROTOCOL', (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http');
 // Host local (puedes cambiar a '127.0.0.1' si lo prefieres)
 define('APP_HOST', getenv('APP_HOST') ?: 'localhost');
-// Construye la BASE_URL con puerto para evitar problemas cuando Apache no usa 80
-define('BASE_URL', APP_PROTOCOL . '://' . APP_HOST . ':' . APP_PORT . '/Cachueleando_On_Fire/');
+// Construye la BASE_URL dinámicamente
+$scriptPath = dirname($_SERVER['SCRIPT_NAME']);
+if ($scriptPath === '/' || $scriptPath === '\\') {
+    $scriptPath = '';
+}
+define('BASE_URL', APP_PROTOCOL . '://' . APP_HOST . ':' . APP_PORT . $scriptPath . '/');
 define('BASE_PATH', __DIR__ . '/../');
 
 // Rutas de archivos

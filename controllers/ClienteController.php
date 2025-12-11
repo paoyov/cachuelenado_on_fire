@@ -15,8 +15,6 @@ class ClienteController extends Controller {
     }
 
     public function dashboard() {
-        $mensajeModel = new Mensaje($this->db);
-        $notificacionModel = new Notificacion($this->db);
         $cliente_id = $_SESSION['usuario_id'];
 
         // Contadores rápidos
@@ -25,24 +23,11 @@ class ClienteController extends Controller {
         $stmt->execute();
         $busquedas_count = $stmt->fetchColumn() ?: 0;
 
-        $stmt2 = $this->db->prepare("SELECT COUNT(*) as total FROM trabajos WHERE cliente_id = :cliente_id");
-        $stmt2->bindParam(':cliente_id', $cliente_id);
-        $stmt2->execute();
-        $trabajos_count = $stmt2->fetchColumn() ?: 0;
-
         $usuario = $this->usuarioModel->getById($cliente_id);
-
-        $calificacionModel = new Calificacion($this->db);
-        $calificacionesGlobales = $calificacionModel->getRecent(6);
 
         $data = [
             'usuario' => $usuario,
-            'mensajes_recientes' => $mensajeModel->getConversationsByCliente($cliente_id),
-            'notificaciones' => $notificacionModel->getByUsuario($cliente_id, 5, true),
-            'busquedas_count' => (int)$busquedas_count,
-            'trabajos_count' => (int)$trabajos_count,
-            'trabajos_activos' => $this->trabajoModel->getByCliente($cliente_id),
-            'calificaciones_globales' => $calificacionesGlobales
+            'busquedas_count' => (int)$busquedas_count
         ];
 
         $this->view('cliente/dashboard', $data);
@@ -69,7 +54,7 @@ class ClienteController extends Controller {
             $data = [
                 'cliente_id' => $_SESSION['usuario_id'],
                 'maestro_id' => $_POST['maestro_id'],
-                'trabajo_id' => $_POST['trabajo_id'],
+                'trabajo_id' => !empty($_POST['trabajo_id']) ? $_POST['trabajo_id'] : null,
                 'puntualidad' => $_POST['puntualidad'],
                 'calidad' => $_POST['calidad'],
                 'trato' => $_POST['trato'],
@@ -126,35 +111,6 @@ class ClienteController extends Controller {
         $this->view('cliente/perfil', $data);
     }
 
-    public function mensajes() {
-        $mensajeModel = new Mensaje($this->db);
-        $maestro_id = isset($_GET['maestro_id']) ? (int)$_GET['maestro_id'] : null;
-
-        $data = [
-            'conversaciones' => $mensajeModel->getConversationsByCliente($_SESSION['usuario_id']),
-            'maestro_id' => $maestro_id
-        ];
-
-        if ($maestro_id) {
-            $maestroModel = new Maestro($this->db);
-            $maestro = $maestroModel->getById($maestro_id);
-            if ($maestro) {
-                // Permitimos iniciar la conversación aunque el perfil no esté marcado como 'validado'.
-                
-                // Obtener especialidades
-                $especialidades = $maestroModel->getEspecialidades($maestro_id);
-                $nombres_especialidades = array_map(function($e) { return $e['nombre']; }, $especialidades);
-                $maestro['especialidad'] = !empty($nombres_especialidades) ? implode(', ', $nombres_especialidades) : '—';
-
-                $data['maestro'] = $maestro;
-                $data['mensajes'] = $mensajeModel->getConversation($_SESSION['usuario_id'], $maestro_id);
-                $mensajeModel->markAsRead($_SESSION['usuario_id'], $maestro_id, 'maestro');
-            }
-        }
-
-        $this->view('cliente/mensajes', $data);
-    }
-
     public function historial() {
         $calificacionModel = new Calificacion($this->db);
         
@@ -168,11 +124,17 @@ class ClienteController extends Controller {
     public function calificaciones() {
         $calificacionModel = new Calificacion($this->db);
         
-        // En una implementación real, aquí obtendríamos las calificaciones dadas por el cliente
-        // o las calificaciones recibidas si fuera relevante.
-        // Por ahora, pasamos un array vacío o datos de prueba si el modelo lo soportara.
+        $maestroModel = new Maestro($this->db);
+        
+        // Obtener calificaciones hechas por el cliente
+        $calificaciones = $calificacionModel->getByCliente($_SESSION['usuario_id']);
+        
+        // Obtener lista de maestros para el selector (solo validados)
+        $maestros = $maestroModel->search();
+
         $data = [
-            'calificaciones' => [] 
+            'calificaciones' => $calificaciones,
+            'maestros' => $maestros
         ];
 
         $this->view('cliente/calificaciones', $data);

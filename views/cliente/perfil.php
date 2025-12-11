@@ -10,8 +10,8 @@ $title = 'Mi Perfil - Cliente';
 </div>
 
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-md-4">
+    <div class="row justify-content-center">
+        <div class="col-md-3">
             <div class="card text-center">
                 <div class="card-body">
                     <?php if (!empty($usuario['foto_perfil'])): ?>
@@ -28,7 +28,7 @@ $title = 'Mi Perfil - Cliente';
             </div>
         </div>
 
-        <div class="col-md-8">
+        <div class="col-md-7">
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Editar Información</h3>
@@ -60,9 +60,8 @@ $title = 'Mi Perfil - Cliente';
                             <input type="file" name="foto_perfil" id="foto_perfil" class="form-control">
                         </div>
 
-                        <div class="form-group d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">Guardar cambios</button>
-                            <a href="<?php echo BASE_URL; ?>cliente/historial" class="btn btn-outline">Historial</a>
+                        <div class="form-group mt-4" style="display: flex; justify-content: center;">
+                            <button type="submit" class="btn btn-primary px-5">Guardar cambios</button>
                         </div>
                     </form>
                 </div>

@@ -59,11 +59,11 @@ $title = 'Gestión de Usuarios';
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="bg-light text-muted">
                         <tr>
-                            <th class="border-0 px-4 py-3">Usuario</th>
-                            <th class="border-0 py-3">Rol</th>
-                            <th class="border-0 py-3">Estado</th>
-                            <th class="border-0 py-3">Registro</th>
-                            <th class="border-0 px-4 py-3 text-end">Acciones</th>
+                            <th class="border-0 px-4 py-3 text-center">Usuario</th>
+                            <th class="border-0 py-3 text-center">Rol</th>
+                            <th class="border-0 py-3 text-center">Estado</th>
+                            <th class="border-0 py-3 text-center">Registro</th>
+                            <th class="border-0 px-4 py-3 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -71,7 +71,7 @@ $title = 'Gestión de Usuarios';
                             <?php foreach ($usuarios as $u): ?>
                                 <tr>
                                     <td class="px-4 py-3">
-                                        <div class="d-flex align-items-center">
+                                        <div class="d-flex align-items-center justify-content-center">
                                             <div class="avatar-circle me-3">
                                                 <?php if (!empty($u['foto_perfil'])): ?>
                                                     <img src="<?php echo UPLOAD_URL . $u['foto_perfil']; ?>" alt="Avatar">
@@ -79,13 +79,13 @@ $title = 'Gestión de Usuarios';
                                                     <span><?php echo strtoupper(substr($u['nombre_completo'], 0, 1)); ?></span>
                                                 <?php endif; ?>
                                             </div>
-                                            <div>
+                                            <div class="text-start">
                                                 <h6 class="mb-0 text-dark font-weight-bold"><?php echo htmlspecialchars($u['nombre_completo']); ?></h6>
                                                 <small class="text-muted"><?php echo htmlspecialchars($u['email']); ?></small>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="py-3">
+                                    <td class="py-3 text-center">
                                         <?php 
                                             $roleClass = match($u['tipo_usuario']) {
                                                 'administrador' => 'badge-purple',
@@ -102,16 +102,16 @@ $title = 'Gestión de Usuarios';
                                             <i class="fas <?php echo $roleIcon; ?> me-1"></i> <?php echo ucfirst($u['tipo_usuario']); ?>
                                         </span>
                                     </td>
-                                    <td class="py-3">
+                                    <td class="py-3 text-center">
                                         <span class="status-indicator status-<?php echo $u['estado']; ?>">
                                             <i class="fas fa-circle"></i> <?php echo ucfirst($u['estado']); ?>
                                         </span>
                                     </td>
-                                    <td class="py-3 text-muted">
+                                    <td class="py-3 text-center text-muted">
                                         <i class="far fa-calendar-alt me-1"></i> <?php echo date('d M Y', strtotime($u['fecha_registro'])); ?>
                                     </td>
-                                    <td class="px-4 py-3 text-end">
-                                        <div class="action-buttons">
+                                    <td class="px-4 py-3">
+                                        <div class="action-buttons d-flex justify-content-center gap-2">
                                             <button type="button" 
                                                     class="btn-icon btn-icon-primary view-user-btn" 
                                                     title="Ver Detalle"
@@ -120,20 +120,33 @@ $title = 'Gestión de Usuarios';
                                             </button>
                                             
                                             <?php if ($u['estado'] !== 'suspendido'): ?>
-                                            <form method="post" action="<?php echo BASE_URL; ?>admin/usuarios" class="d-inline" onsubmit="return confirm('¿Suspender usuario?');">
-                                                <input type="hidden" name="usuario_id" value="<?php echo $u['id']; ?>">
-                                                <button type="submit" name="accion" value="suspender" class="btn-icon btn-icon-warning" title="Suspender">
-                                                    <i class="fas fa-ban"></i>
-                                                </button>
-                                            </form>
+                                            <button type="button" 
+                                                    class="btn-icon btn-icon-warning suspend-user-btn" 
+                                                    title="Suspender"
+                                                    data-user-id="<?php echo $u['id']; ?>"
+                                                    data-user-name="<?php echo htmlspecialchars($u['nombre_completo']); ?>"
+                                                    data-action="suspender">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                            <?php else: ?>
+                                            <button type="button" 
+                                                    class="btn-icon btn-icon-success activate-user-btn" 
+                                                    title="Activar"
+                                                    data-user-id="<?php echo $u['id']; ?>"
+                                                    data-user-name="<?php echo htmlspecialchars($u['nombre_completo']); ?>"
+                                                    data-action="activar">
+                                                <i class="fas fa-check-circle"></i>
+                                            </button>
                                             <?php endif; ?>
 
-                                            <form method="post" action="<?php echo BASE_URL; ?>admin/usuarios" class="d-inline" onsubmit="return confirm('¿Eliminar permanentemente?');">
-                                                <input type="hidden" name="usuario_id" value="<?php echo $u['id']; ?>">
-                                                <button type="submit" name="accion" value="eliminar" class="btn-icon btn-icon-danger" title="Eliminar">
-                                                    <i class="fas fa-trash-alt"></i>
-                                                </button>
-                                            </form>
+                                            <button type="button" 
+                                                    class="btn-icon btn-icon-danger delete-user-btn" 
+                                                    title="Eliminar"
+                                                    data-user-id="<?php echo $u['id']; ?>"
+                                                    data-user-name="<?php echo htmlspecialchars($u['nombre_completo']); ?>"
+                                                    data-action="eliminar">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -145,121 +158,95 @@ $title = 'Gestión de Usuarios';
                 </table>
             </div>
         </div>
-        <div class="card-footer bg-white py-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <small class="text-muted">Mostrando <?php echo count($usuarios); ?> registros</small>
+        <div class="card-footer bg-white py-3 border-top">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        <i class="fas fa-users me-2"></i>
+                        Mostrando <strong><?php echo count($usuarios); ?></strong> registros
+                        <?php if ($tipo): ?>
+                            de tipo <strong><?php echo ucfirst($tipo); ?></strong>
+                        <?php endif; ?>
+                    </small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-2"></i>
+                        Última actualización: <?php echo date('d/m/Y H:i'); ?>
+                    </small>
+                </div>
             </div>
+        </div>
     </div>
 </div>
 
 <!-- Modal Detalle Usuario -->
 <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 700px;">
-    <div class="modal-content border-0 shadow-lg" style="border-radius: 24px; overflow: hidden; background: #fff;">
-      
-      <!-- Header with Gradient -->
-      <div class="modal-header border-0 p-0" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%); height: 100px; position: relative;">
-        <button type="button" class="close-modal-btn text-white position-absolute top-0 end-0 m-3" onclick="closeUserModal()" style="z-index: 10;">
-            <i class="fas fa-times fa-lg"></i>
-        </button>
-      </div>
-
-      <div class="modal-body px-4 pb-4 pt-0">
-        <div class="row">
-            <!-- Profile Info (Overlapping Header) -->
-            <div class="col-12 text-center" style="margin-top: -50px;">
-                <div class="avatar-large mx-auto mb-3 shadow-lg bg-white">
-                    <img id="modal-img" src="" alt="Avatar" style="display:none;">
-                    <span id="modal-initials"></span>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Detalle del Usuario</h3>
+                <button type="button" class="close-modal-btn" onclick="closeUserModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <img id="modal-img" src="" alt="Foto de Perfil" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover; border: 4px solid white; display: none;">
+                    <div id="modal-initials" class="avatar-large mx-auto mb-3" style="display: none;"></div>
+                    <h4 id="modal-name" class="mb-1"></h4>
+                    <p id="modal-email" class="text-muted mb-2"></p>
+                    <div class="d-flex justify-content-center gap-2 mb-3">
+                        <span id="modal-role" class="badge-pill"></span>
+                        <span id="modal-status" class="status-indicator"></span>
+                    </div>
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-light border">
+                        <span class="text-uppercase text-muted font-weight-bold" style="font-size: 0.7rem;">ID</span>
+                        <span id="modal-id" class="font-family-monospace text-dark font-weight-bold">#</span>
+                    </div>
                 </div>
-                <h4 id="modal-name" class="font-weight-bold mb-1 text-dark"></h4>
-                <p id="modal-email" class="text-muted mb-3"></p>
                 
-                <div class="d-flex justify-content-center gap-2 mb-4">
-                    <span id="modal-role" class="badge-pill shadow-sm"></span>
-                    <span id="modal-status" class="status-indicator px-3 py-1 bg-light rounded-pill border"></span>
+                <div class="text-center">
+                    <h5 class="section-title"><i class="fas fa-id-card"></i> Información Personal</h5>
+                    <div class="info-grid">
+                        <div><strong>Teléfono:</strong> <span id="modal-phone"></span></div>
+                        <div><strong>DNI:</strong> <span id="modal-dni"></span></div>
+                        <div><strong>Fecha Registro:</strong> <span id="modal-date"></span></div>
+                        <div><strong>Último Acceso:</strong> <span id="modal-last-access"></span></div>
+                    </div>
                 </div>
             </div>
-
-            <!-- ID Badge -->
-            <div class="col-12 text-center mb-4">
-                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-light border">
-                    <span class="text-uppercase text-muted font-weight-bold" style="font-size: 0.7rem;">ID</span>
-                    <span id="modal-id" class="font-family-monospace text-dark font-weight-bold">#</span>
-                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeUserModal()">Cerrar</button>
             </div>
-            
-            <!-- Contact Info Grid -->
-            <div class="col-12">
-                <h6 class="text-primary font-weight-bold mb-3 ps-2 border-start border-4 border-primary">Información Personal</h6>
-                <div class="row g-3">
-                    <div class="col-sm-6">
-                        <div class="p-3 border rounded-lg bg-light h-100 d-flex align-items-center gap-3">
-                            <div class="icon-box bg-white text-primary rounded-circle shadow-sm">
-                                <i class="fas fa-phone"></i>
-                            </div>
-                            <div>
-                                <label class="d-block text-muted x-small text-uppercase mb-0">Teléfono</label>
-                                <span id="modal-phone" class="font-weight-medium text-dark"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <div class="p-3 border rounded-lg bg-light h-100 d-flex align-items-center gap-3">
-                            <div class="icon-box bg-white text-primary rounded-circle shadow-sm">
-                                <i class="fas fa-id-card"></i>
-                            </div>
-                            <div>
-                                <label class="d-block text-muted x-small text-uppercase mb-0">DNI / Doc</label>
-                                <span id="modal-dni" class="font-weight-medium text-dark"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <div class="p-3 border rounded-lg bg-light h-100 d-flex align-items-center gap-3">
-                            <div class="icon-box bg-white text-primary rounded-circle shadow-sm">
-                                <i class="far fa-calendar-alt"></i>
-                            </div>
-                            <div>
-                                <label class="d-block text-muted x-small text-uppercase mb-0">Registro</label>
-                                <span id="modal-date" class="font-weight-medium text-dark"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <div class="p-3 border rounded-lg bg-light h-100 d-flex align-items-center gap-3">
-                            <div class="icon-box bg-white text-primary rounded-circle shadow-sm">
-                                <i class="far fa-clock"></i>
-                            </div>
-                            <div>
-                                <label class="d-block text-muted x-small text-uppercase mb-0">Último Acceso</label>
-                                <span id="modal-last-access" class="font-weight-medium text-dark"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        </div>
+    </div>
+</div>
+<div class="modal-backdrop fade" id="modalBackdrop" style="display:none;"></div>
 
-                <div id="maestro-fields" style="display:none;" class="mt-4">
-                    <div class="alert alert-warning bg-warning-light border-0 rounded-lg d-flex align-items-center justify-content-between p-3">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="bg-white p-2 rounded-circle text-warning shadow-sm">
-                                <i class="fas fa-hard-hat fa-lg"></i>
-                            </div>
-                            <div>
-                                <strong class="text-dark d-block">Perfil Profesional</strong>
-                                <small class="text-muted">Usuario verificado como maestro</small>
-                            </div>
-                        </div>
-                        <a href="#" id="modal-maestro-link" class="btn btn-sm btn-warning text-dark font-weight-bold shadow-sm px-3 rounded-pill">Ver Perfil</a>
-                    </div>
+<!-- Modal Confirmación Suspender/Activar Usuario -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true" style="display:none;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content confirm-modal-content">
+            <div class="modal-body confirm-modal-body">
+                <div class="confirm-icon-wrapper">
+                    <i class="fas" id="confirm-icon"></i>
+                </div>
+                <h4 class="confirm-title" id="confirm-title"></h4>
+                <p class="confirm-message" id="confirm-message"></p>
+                <div class="confirm-buttons">
+                    <form method="post" action="<?php echo BASE_URL; ?>admin/usuarios" id="confirm-form" style="display: inline;">
+                        <input type="hidden" name="usuario_id" id="confirm-user-id">
+                        <input type="hidden" name="accion" id="confirm-action">
+                        <button type="button" class="btn btn-cancel" onclick="closeConfirmModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-confirm" id="confirm-submit-btn">Aceptar</button>
+                    </form>
                 </div>
             </div>
         </div>
-      </div>
     </div>
-  </div>
 </div>
-<div class="modal-backdrop fade" id="modalBackdrop" style="display:none;"></div>
+<div class="modal-backdrop fade" id="confirmModalBackdrop" style="display:none;"></div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -308,15 +295,6 @@ document.addEventListener('DOMContentLoaded', function() {
             statusSpan.innerHTML = `<i class="fas fa-circle fa-xs me-1"></i> ${user.estado.charAt(0).toUpperCase() + user.estado.slice(1)}`;
             statusSpan.className = `status-indicator px-3 py-1 bg-white rounded-pill shadow-sm border status-${user.estado}`;
 
-            // Maestro specific
-            const maestroFields = document.getElementById('maestro-fields');
-            if (user.tipo_usuario === 'maestro') {
-                maestroFields.style.display = 'block';
-                document.getElementById('modal-maestro-link').href = BASE_URL + 'maestro/perfil?id=' + user.id; 
-            } else {
-                maestroFields.style.display = 'none';
-            }
-
             // Show
             modal.style.display = 'block';
             modal.classList.add('show');
@@ -341,6 +319,93 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('click', function(e) {
         if (e.target === modal) {
             closeUserModal();
+        }
+    });
+
+    // Confirm Modal (Suspender/Activar)
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmBackdrop = document.getElementById('confirmModalBackdrop');
+    const confirmForm = document.getElementById('confirm-form');
+
+    // Open Confirm Modal for Suspend
+    document.querySelectorAll('.suspend-user-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const userName = this.dataset.userName;
+            
+            document.getElementById('confirm-user-id').value = userId;
+            document.getElementById('confirm-action').value = 'suspender';
+            document.getElementById('confirm-title').textContent = '¿Suspender usuario?';
+            document.getElementById('confirm-message').textContent = `¿Estás seguro de que deseas suspender a ${userName}? El usuario no podrá acceder al sistema hasta que sea reactivado.`;
+            document.getElementById('confirm-icon').className = 'fas fa-ban';
+            document.getElementById('confirm-icon').parentElement.className = 'confirm-icon-wrapper warning';
+            document.getElementById('confirm-submit-btn').className = 'btn btn-confirm btn-warning';
+            document.getElementById('confirm-submit-btn').textContent = 'Suspender';
+            
+            showConfirmModal();
+        });
+    });
+
+    // Open Confirm Modal for Activate
+    document.querySelectorAll('.activate-user-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const userName = this.dataset.userName;
+            
+            document.getElementById('confirm-user-id').value = userId;
+            document.getElementById('confirm-action').value = 'activar';
+            document.getElementById('confirm-title').textContent = '¿Activar usuario?';
+            document.getElementById('confirm-message').textContent = `¿Estás seguro de que deseas activar a ${userName}? El usuario podrá acceder nuevamente al sistema.`;
+            document.getElementById('confirm-icon').className = 'fas fa-check-circle';
+            document.getElementById('confirm-icon').parentElement.className = 'confirm-icon-wrapper success';
+            document.getElementById('confirm-submit-btn').className = 'btn btn-confirm btn-success';
+            document.getElementById('confirm-submit-btn').textContent = 'Activar';
+            
+            showConfirmModal();
+        });
+    });
+
+    // Open Confirm Modal for Delete
+    document.querySelectorAll('.delete-user-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const userName = this.dataset.userName;
+            
+            document.getElementById('confirm-user-id').value = userId;
+            document.getElementById('confirm-action').value = 'eliminar';
+            document.getElementById('confirm-title').textContent = '¿Eliminar usuario?';
+            document.getElementById('confirm-message').textContent = `¿Estás seguro de que deseas eliminar permanentemente a ${userName}? Esta acción no se puede deshacer y se eliminará toda la información del usuario.`;
+            document.getElementById('confirm-icon').className = 'fas fa-trash-alt';
+            document.getElementById('confirm-icon').parentElement.className = 'confirm-icon-wrapper danger';
+            document.getElementById('confirm-submit-btn').className = 'btn btn-confirm btn-danger';
+            document.getElementById('confirm-submit-btn').textContent = 'Eliminar';
+            
+            showConfirmModal();
+        });
+    });
+
+    function showConfirmModal() {
+        confirmModal.style.display = 'flex';
+        confirmModal.classList.add('show');
+        confirmBackdrop.style.display = 'block';
+        confirmBackdrop.classList.add('show');
+        document.body.classList.add('modal-open');
+    }
+
+    window.closeConfirmModal = function() {
+        confirmModal.classList.remove('show');
+        confirmBackdrop.classList.remove('show');
+        setTimeout(() => {
+            confirmModal.style.display = 'none';
+            confirmBackdrop.style.display = 'none';
+            document.body.classList.remove('modal-open');
+        }, 150);
+    };
+
+    // Click outside to close confirm modal
+    window.addEventListener('click', function(e) {
+        if (e.target === confirmModal) {
+            closeConfirmModal();
         }
     });
 });
@@ -387,7 +452,63 @@ document.addEventListener('DOMContentLoaded', function() {
 .stat-info h3 { margin: 0; font-size: 1.8rem; font-weight: 700; color: var(--dark-color); }
 .stat-info p { margin: 0; color: var(--gray-color); font-size: 0.9rem; }
 
+/* Filter Buttons */
+.btn-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-group .btn {
+    padding: 0.5rem 1.2rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-outline-primary {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+
 /* Table Styling */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    margin-bottom: 0;
+}
+
 .table thead th {
     font-weight: 600;
     text-transform: uppercase;
@@ -395,6 +516,7 @@ document.addEventListener('DOMContentLoaded', function() {
     letter-spacing: 0.5px;
     background: #f8f9fa;
     color: #6c757d;
+    white-space: nowrap;
 }
 .table tbody tr { transition: background 0.2s; }
 .table tbody tr:hover { background: #f8f9fa; }
@@ -454,22 +576,75 @@ document.addEventListener('DOMContentLoaded', function() {
 .status-eliminado { color: var(--danger-color); }
 
 /* Action Buttons */
+.action-buttons {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.action-buttons form {
+    display: inline-flex;
+    margin: 0;
+}
+
 .btn-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     border: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
-    background: transparent;
-    color: var(--gray-color);
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+    color: #6c757d;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    font-size: 0.9rem;
 }
-.btn-icon:hover { background: var(--light-color); transform: translateY(-2px); }
-.btn-icon-primary:hover { color: var(--primary-color); background: rgba(255, 107, 53, 0.1); }
-.btn-icon-warning:hover { color: var(--warning-color); background: rgba(255, 193, 7, 0.1); }
-.btn-icon-danger:hover { color: var(--danger-color); background: rgba(220, 53, 69, 0.1); }
+
+.btn-icon:hover { 
+    transform: translateY(-3px); 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-icon-primary { 
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+.btn-icon-primary:hover { 
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-icon-warning { 
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+.btn-icon-warning:hover { 
+    background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+}
+
+.btn-icon-danger { 
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: white;
+}
+.btn-icon-danger:hover { 
+    background: linear-gradient(135deg, #fee140 0%, #fa709a 100%);
+    box-shadow: 0 4px 15px rgba(250, 112, 154, 0.4);
+}
+
+.btn-icon-success { 
+    background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+    color: white;
+}
+.btn-icon-success:hover { 
+    background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+    box-shadow: 0 4px 15px rgba(86, 171, 47, 0.4);
+}
 
 /* Utilities */
 .me-1 { margin-right: 0.25rem; }
@@ -603,4 +778,295 @@ document.addEventListener('DOMContentLoaded', function() {
 .bg-warning-light {
     background-color: rgba(255, 193, 7, 0.1);
 }
+
+/* Modal Enhancements for User Detail */
+#userModal .modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+#userModal .modal-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #ff8e5d 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    border-bottom: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 12px 12px 0 0;
+}
+
+#userModal .modal-header h3 {
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+#userModal .close-modal-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.9);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+    line-height: 1;
+}
+
+#userModal .close-modal-btn:hover {
+    color: white;
+    transform: scale(1.1);
+}
+
+#userModal .modal-body {
+    padding: 2rem;
+}
+
+#userModal .section-title {
+    background: rgba(255, 106, 42, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+#userModal .section-title i {
+    margin-right: 0.5rem;
+}
+
+#userModal .info-grid {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    margin-bottom: 2rem;
+    font-size: 1rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#userModal .info-grid div {
+    margin-bottom: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed #eee;
+    padding-bottom: 0.8rem;
+    line-height: 1.6;
+}
+
+#userModal .info-grid div:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+#userModal .avatar-large {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: var(--light-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    border: 4px solid white;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+#userModal #modal-img {
+    border: 4px solid white;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    margin: 0 auto;
+    display: block;
+}
+
+#userModal .modal-footer {
+    padding: 1rem 2rem;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: center;
+}
+
+/* Confirm Modal Styles */
+#confirmModal {
+    z-index: 1060;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+#confirmModal.show {
+    display: flex;
+}
+
+#confirmModal .modal-dialog {
+    margin: 0;
+    max-width: 450px;
+    width: 90%;
+}
+
+#confirmModal .modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 1rem);
+    justify-content: center;
+    padding: 1rem;
+}
+
+.confirm-modal-content {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    border: none;
+    max-width: 450px;
+    margin: 0 auto;
+}
+
+.confirm-modal-body {
+    padding: 2.5rem;
+    text-align: center;
+    background: white;
+}
+
+.confirm-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 2.5rem;
+    color: white;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.confirm-icon-wrapper.warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.confirm-icon-wrapper.success {
+    background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+}
+
+.confirm-icon-wrapper.danger {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.confirm-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dark-color);
+    margin-bottom: 1rem;
+    letter-spacing: 0.3px;
+}
+
+.confirm-message {
+    font-size: 1rem;
+    color: var(--gray-color);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.confirm-buttons .btn {
+    padding: 0.75rem 2rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.btn-cancel {
+    background: #f8f9fa;
+    color: var(--gray-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.btn-cancel:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-confirm {
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.btn-confirm.btn-warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.btn-confirm.btn-warning:hover {
+    background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+}
+
+.btn-confirm.btn-success {
+    background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+}
+
+.btn-confirm.btn-success:hover {
+    background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(86, 171, 47, 0.4);
+}
+
+.btn-confirm.btn-danger {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.btn-confirm.btn-danger:hover {
+    background: linear-gradient(135deg, #fee140 0%, #fa709a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(250, 112, 154, 0.4);
+}
+
+#confirmModalBackdrop {
+    z-index: 1055;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+}
+
+@media (max-width: 576px) {
+    .confirm-modal-body {
+        padding: 2rem 1.5rem;
+    }
+    
+    .confirm-icon-wrapper {
+        width: 70px;
+        height: 70px;
+        font-size: 2rem;
+    }
+    
+    .confirm-title {
+        font-size: 1.3rem;
+    }
+    
+    .confirm-buttons {
+        flex-direction: column;
+    }
+    
+    .confirm-buttons .btn {
+        width: 100%;
+    }
+}
+
 </style>

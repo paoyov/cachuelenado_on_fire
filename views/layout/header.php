@@ -54,10 +54,8 @@
                     <?php if (isLoggedIn()): ?>
                         <?php if (isCliente()): ?>
                             <li><a href="<?php echo BASE_URL; ?>cliente/dashboard">Mi Panel</a></li>
-                            <li><a href="<?php echo BASE_URL; ?>cliente/mensajes">Mensajes</a></li>
                         <?php elseif (isMaestro()): ?>
                             <li><a href="<?php echo BASE_URL; ?>maestro/dashboard">Mi Panel</a></li>
-                            <li><a href="<?php echo BASE_URL; ?>maestro/mensajes">Mensajes</a></li>
                         <?php elseif (isAdmin()): ?>
                             <li><a href="<?php echo BASE_URL; ?>admin/dashboard">Panel Admin</a></li>
                         <?php endif; ?>
@@ -75,7 +73,7 @@
                             <ul class="dropdown-menu">
                                 <?php if (isCliente()): ?>
                                     <li><a href="<?php echo BASE_URL; ?>cliente/perfil"><i class="fas fa-user"></i> Mi Perfil</a></li>
-                                    <li><a href="<?php echo BASE_URL; ?>cliente/historial"><i class="fas fa-history"></i> Historial</a></li>
+
                                 <?php elseif (isMaestro()): ?>
                                     <li><a href="<?php echo BASE_URL; ?>maestro/perfil-editar"><i class="fas fa-user-edit"></i> Editar Perfil</a></li>
                                     <li><a href="<?php echo BASE_URL; ?>maestro/portafolio"><i class="fas fa-images"></i> Portafolio</a></li>

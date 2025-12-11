@@ -21,13 +21,11 @@ class MaestroController extends Controller {
             redirect('register');
         }
 
-        $mensajeModel = new Mensaje($this->db);
         $calificacionModel = new Calificacion($this->db);
         $notificacionModel = new Notificacion($this->db);
 
         $data = [
             'maestro' => $maestro,
-            'mensajes_recientes' => $mensajeModel->getConversationsByMaestro($maestro['id']),
             'calificaciones_recientes' => $calificacionModel->getByMaestro($maestro['id'], 5),
             'notificaciones' => $notificacionModel->getByUsuario($_SESSION['usuario_id'], 5, true),
             'calificaciones_globales' => $calificacionModel->getRecent(6)
@@ -207,36 +205,6 @@ class MaestroController extends Controller {
 
         $data = ['maestro' => $maestro];
         $this->view('maestro/disponibilidad', $data);
-    }
-
-    public function mensajes() {
-        $this->requireAuth(['maestro']);
-        
-        $maestro = $this->maestroModel->getByUsuarioId($_SESSION['usuario_id']);
-        if (!$maestro) {
-            redirect('register');
-        }
-
-        $mensajeModel = new Mensaje($this->db);
-        $cliente_id = $_GET['cliente_id'] ?? null;
-
-        $data = [
-            'maestro' => $maestro,
-            'conversaciones' => $mensajeModel->getConversationsByMaestro($maestro['id']),
-            'cliente_id' => $cliente_id
-        ];
-
-        // Obtener especialidades para mostrar en la vista
-        $especialidades = $this->maestroModel->getEspecialidades($maestro['id']);
-        $nombres_especialidades = array_map(function($e) { return $e['nombre']; }, $especialidades);
-        $data['maestro']['especialidad'] = !empty($nombres_especialidades) ? implode(', ', $nombres_especialidades) : '—';
-
-        if ($cliente_id) {
-            $data['mensajes'] = $mensajeModel->getConversation($cliente_id, $maestro['id']);
-            $mensajeModel->markAsRead($cliente_id, $maestro['id'], 'cliente');
-        }
-
-        $this->view('maestro/mensajes', $data);
     }
 
     public function calificaciones() {

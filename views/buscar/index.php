@@ -116,7 +116,7 @@ $title = 'Buscar Maestros';
                                         echo $status[$maestro['disponibilidad']] ?? 'Disponible';
                                         ?>
                                     </span>
-                                    <a href="<?php echo BASE_URL; ?>cliente/mensajes?maestro_id=<?php echo $maestro['id']; ?>" class="btn btn-outline btn-sm" style="margin-right: 5px;">Contactar</a>
+
                                     <a href="<?php echo BASE_URL; ?>maestro/perfil?id=<?php echo $maestro['id']; ?>" class="btn btn-primary btn-sm">Ver Perfil</a>
                                 </div>
                             </div>
@@ -141,6 +141,21 @@ $title = 'Buscar Maestros';
 .results-header h2 {
     font-size: 1.5rem;
     color: var(--dark-color);
+}
+
+/* Asegurar que los cards se muestren completos */
+.row .col-6 {
+    margin-bottom: 1.5rem;
+}
+
+.row .col-6 .maestro-card {
+    height: auto;
+    min-height: auto;
+}
+
+/* Asegurar que las imágenes no se corten */
+.maestro-card-image {
+    flex-shrink: 0;
 }
 
 </style>

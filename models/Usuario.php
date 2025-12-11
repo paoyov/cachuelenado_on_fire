@@ -120,8 +120,15 @@ class Usuario {
         return $stmt->execute();
     }
 
+    public function activate($id) {
+        $query = "UPDATE {$this->table} SET estado = 'activo' WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
+
     public function delete($id) {
-        $query = "UPDATE {$this->table} SET estado = 'eliminado' WHERE id = :id";
+        $query = "DELETE FROM {$this->table} WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id);
         return $stmt->execute();

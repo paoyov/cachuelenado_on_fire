@@ -34,11 +34,7 @@ $title = 'Perfil del Maestro';
                         ?>
                     </div>
                     
-                    <?php if (isCliente()): ?>
-                    <a href="<?php echo BASE_URL; ?>cliente/mensajes?maestro_id=<?php echo $maestro['id']; ?>" class="btn btn-primary btn-block">
-                        <i class="fas fa-envelope"></i> Contactar
-                    </a>
-                    <?php endif; ?>
+
                 </div>
             </div>
             

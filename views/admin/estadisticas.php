@@ -6,36 +6,28 @@ $title = 'Estadísticas del Sistema';
     <h2>Estadísticas Generales</h2>
     <p>Aquí puedes ver métricas globales del sistema y gráficos interactivos.</p>
 
-    <div class="row mb-4">
+    <div class="row mb-4 justify-content-center" style="gap: 20px;">
         <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h4>Clientes</h4>
-                    <span class="display-4 metric-clientes"><?php echo isset($total_clientes) ? $total_clientes : '0'; ?></span>
+            <div class="card text-center h-100 shadow-hover">
+                <div class="card-body py-4">
+                    <h4 style="color: #ff6a2a;">Clientes</h4>
+                    <span class="display-4 metric-clientes" style="color: #ff6a2a;"><?php echo isset($total_clientes) ? $total_clientes : '0'; ?></span>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h4>Maestros</h4>
-                    <span class="display-4 metric-maestros"><?php echo isset($total_maestros) ? $total_maestros : '0'; ?></span>
+            <div class="card text-center h-100 shadow-hover">
+                <div class="card-body py-4">
+                    <h4 style="color: #2a9dff;">Maestros</h4>
+                    <span class="display-4 metric-maestros" style="color: #2a9dff;"><?php echo isset($total_maestros) ? $total_maestros : '0'; ?></span>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h4>Búsquedas</h4>
-                    <span class="display-4 metric-busquedas"><?php echo isset($total_busquedas) ? $total_busquedas : '0'; ?></span>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h4>Trabajos</h4>
-                    <span class="display-4 metric-trabajos"><?php echo isset($total_trabajos) ? $total_trabajos : '0'; ?></span>
+            <div class="card text-center h-100 shadow-hover">
+                <div class="card-body py-4">
+                    <h4 style="color: #4CAF50;">Búsquedas</h4>
+                    <span class="display-4 metric-busquedas" style="color: #4CAF50;"><?php echo isset($total_busquedas) ? $total_busquedas : '0'; ?></span>
                 </div>
             </div>
         </div>
@@ -71,7 +63,6 @@ $title = 'Estadísticas del Sistema';
 const clientes = parseInt(document.querySelector('.metric-clientes').textContent) || 0;
 const maestros = parseInt(document.querySelector('.metric-maestros').textContent) || 0;
 const busquedas = parseInt(document.querySelector('.metric-busquedas').textContent) || 0;
-const trabajos = parseInt(document.querySelector('.metric-trabajos').textContent) || 0;
 
 // Gráfico de pastel: distribución de usuarios
 const ctxPie = document.getElementById('pieUsuarios').getContext('2d');
@@ -98,12 +89,12 @@ const ctxBar = document.getElementById('barMetricas').getContext('2d');
 new Chart(ctxBar, {
     type: 'bar',
     data: {
-        labels: ['Clientes', 'Maestros', 'Búsquedas', 'Trabajos'],
+        labels: ['Clientes', 'Maestros', 'Búsquedas'],
         datasets: [{
             label: 'Cantidad',
-            data: [clientes, maestros, busquedas, trabajos],
+            data: [clientes, maestros, busquedas],
             backgroundColor: [
-                '#ff6a2a', '#2a9dff', '#6aff2a', '#ff2a6a'
+                '#ff6a2a', '#2a9dff', '#6aff2a'
             ],
             borderRadius: 8
         }]
@@ -122,7 +113,28 @@ new Chart(ctxBar, {
 </script>
 
 <style>
-.card-title, .card h4 { color: var(--primary-color); }
-.card { box-shadow: var(--shadow-lg); }
-.display-4 { font-size: 2.5rem; font-weight: bold; }
+.card-title { color: var(--primary-color); }
+.card { 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+    border: none;
+    border-radius: 12px;
+    transition: transform 0.2s;
+}
+.shadow-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+}
+.display-4 { 
+    font-size: 3.5rem; 
+    font-weight: 700; 
+    display: block;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.05);
+}
+.card h4 {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    opacity: 0.9;
+}
 </style>

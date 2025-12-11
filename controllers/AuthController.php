@@ -135,10 +135,19 @@ class AuthController extends Controller {
                 
                 $maestro_id = $maestroModel->create($usuario_id, $maestroData);
                 
+                // Debug: Log file upload attempt
+                error_log("=== DOCUMENT UPLOAD DEBUG ===");
+                error_log("Maestro ID created: " . $maestro_id);
+                error_log("FILES array: " . print_r($_FILES, true));
+                error_log("POST array: " . print_r($_POST, true));
+                
                 // Subir documentos
                 if (isset($_FILES['documentos'])) {
+                    error_log("documentos key exists in FILES");
                     $documentoModel = new DocumentoMaestro($this->db);
                     $this->uploadDocuments($maestro_id, $_FILES['documentos'], $documentoModel);
+                } else {
+                    error_log("WARNING: documentos key NOT found in FILES array!");
                 }
             }
 
@@ -181,28 +190,75 @@ class AuthController extends Controller {
     }
 
     private function uploadDocuments($maestro_id, $files, $documentoModel) {
+        error_log("=== uploadDocuments called ===");
+        error_log("Maestro ID: " . $maestro_id);
+        error_log("FILES structure: " . print_r($files, true));
+        
+        // The HTML inputs create this structure:
+        // <input name="documentos[dni][]"> creates $_FILES['documentos']['name']['dni'][0]
+        // NOT $_FILES['documentos']['dni']['name'][0]
+        
         $tipos = ['dni', 'certificado', 'foto_trabajo'];
+        $uploadCount = 0;
         
         foreach ($tipos as $tipo) {
-            if (isset($files[$tipo]) && is_array($files[$tipo]['name'])) {
-                foreach ($files[$tipo]['name'] as $key => $name) {
-                    if ($files[$tipo]['error'][$key] === UPLOAD_ERR_OK) {
-                        $file = [
-                            'name' => $files[$tipo]['name'][$key],
-                            'type' => $files[$tipo]['type'][$key],
-                            'tmp_name' => $files[$tipo]['tmp_name'][$key],
-                            'error' => $files[$tipo]['error'][$key],
-                            'size' => $files[$tipo]['size'][$key]
-                        ];
+            error_log("Processing tipo: " . $tipo);
+            
+            // Check if this document type has any files
+            if (isset($files['name'][$tipo]) && is_array($files['name'][$tipo])) {
+                $fileCount = count($files['name'][$tipo]);
+                error_log("Found {$fileCount} file(s) for tipo: {$tipo}");
+                
+                for ($i = 0; $i < $fileCount; $i++) {
+                    // Skip if no file was uploaded (empty file input)
+                    if (empty($files['name'][$tipo][$i])) {
+                        error_log("Skipping empty file at index {$i} for tipo: {$tipo}");
+                        continue;
+                    }
+                    
+                    // Check for upload errors
+                    if ($files['error'][$tipo][$i] !== UPLOAD_ERR_OK) {
+                        error_log("Upload error for {$tipo}[{$i}]: " . $files['error'][$tipo][$i]);
+                        continue;
+                    }
+                    
+                    // Reconstruct file array for uploadFile method
+                    $file = [
+                        'name' => $files['name'][$tipo][$i],
+                        'type' => $files['type'][$tipo][$i],
+                        'tmp_name' => $files['tmp_name'][$tipo][$i],
+                        'error' => $files['error'][$tipo][$i],
+                        'size' => $files['size'][$tipo][$i]
+                    ];
+                    
+                    error_log("Uploading file: {$file['name']} (size: {$file['size']} bytes)");
+                    
+                    // Upload the file
+                    $upload = $this->uploadFile($file, 'documentos/' . $tipo, ALLOWED_DOCUMENT_TYPES);
+                    
+                    if ($upload['success']) {
+                        error_log("File uploaded successfully: " . $upload['path']);
                         
-                        $upload = $this->uploadFile($file, 'documentos/' . $tipo, ALLOWED_DOCUMENT_TYPES);
-                        if ($upload['success']) {
-                            $documentoModel->add($maestro_id, $tipo, $upload['filename'], $upload['path']);
+                        // Save to database
+                        $result = $documentoModel->add($maestro_id, $tipo, $upload['filename'], $upload['path']);
+                        
+                        if ($result) {
+                            error_log("✓ Document saved to database: {$tipo} - {$upload['filename']}");
+                            $uploadCount++;
+                        } else {
+                            error_log("✗ Failed to save document to database");
                         }
+                    } else {
+                        error_log("✗ File upload failed: " . ($upload['message'] ?? 'Unknown error'));
                     }
                 }
+            } else {
+                error_log("No files found for tipo: {$tipo}");
             }
         }
+        
+        error_log("=== Upload complete: {$uploadCount} document(s) saved ===");
+        return $uploadCount;
     }
 }
 

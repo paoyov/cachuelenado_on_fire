@@ -54,6 +54,23 @@ class Calificacion {
         return $stmt->fetchAll();
     }
 
+    public function getByCliente($cliente_id) {
+        $query = "SELECT c.*, m.id as maestro_id, u.nombre_completo as maestro_nombre, u.foto_perfil as maestro_foto, es.nombre as especialidad
+                  FROM {$this->table} c
+                  INNER JOIN maestros m ON c.maestro_id = m.id
+                  INNER JOIN usuarios u ON m.usuario_id = u.id
+                  LEFT JOIN maestro_especialidades me ON m.id = me.maestro_id
+                  LEFT JOIN especialidades es ON me.especialidad_id = es.id
+                  WHERE c.cliente_id = :cliente_id
+                  GROUP BY c.id
+                  ORDER BY c.fecha_calificacion DESC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':cliente_id', $cliente_id);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public function getByTrabajo($trabajo_id) {
         $query = "SELECT * FROM {$this->table} WHERE trabajo_id = :trabajo_id";
         $stmt = $this->conn->prepare($query);

@@ -462,6 +462,8 @@ textarea.form-control {
     flex: 0 0 50%;
     max-width: 50%;
     padding: 0 15px;
+    display: flex;
+    flex-direction: column;
 }
 
 .col-4 {
@@ -470,10 +472,18 @@ textarea.form-control {
     padding: 0 15px;
 }
 
+.col-9 {
+    flex: 0 0 75%;
+    max-width: 75%;
+    padding: 0 15px;
+}
+
 .col-3 {
     flex: 0 0 25%;
     max-width: 25%;
     padding: 0 15px;
+    display: flex;
+    flex-direction: column;
 }
 
 /* ============================================
@@ -508,18 +518,38 @@ main {
 
 .maestro-card {
     background: var(--white);
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
     overflow: hidden;
-    transition: var(--transition);
-    height: 100%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 100%;
     display: flex;
     flex-direction: column;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    position: relative;
+    backdrop-filter: blur(10px);
+}
+
+.maestro-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .maestro-card:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-6px);
+    border-color: rgba(255, 107, 53, 0.2);
+}
+
+.maestro-card:hover::before {
+    opacity: 1;
 }
 
 .maestro-card-image {
@@ -532,13 +562,36 @@ main {
     justify-content: center;
     font-size: 4rem;
     color: var(--gray-color);
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 16px 16px 0 0;
+    position: relative;
+}
+
+.maestro-card-image::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.02) 100%);
+    pointer-events: none;
+}
+
+.maestro-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .maestro-card-body {
-    padding: 1.5rem;
+    padding: 1.75rem;
     flex: 1;
     display: flex;
     flex-direction: column;
+    background: var(--white);
+    min-height: 0;
 }
 
 .maestro-card-header {
@@ -549,29 +602,54 @@ main {
 }
 
 .maestro-card-title {
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-size: 1.5rem;
+    font-weight: 700;
     margin: 0;
-    color: var(--dark-color);
+    color: #1a1a1a;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
 }
 
 .maestro-card-rating {
     display: flex;
     align-items: center;
     gap: 5px;
-    color: var(--warning-color);
-    font-weight: 600;
+    color: #f59e0b;
+    font-weight: 700;
+    font-size: 1.1rem;
+    background: rgba(245, 158, 11, 0.1);
+    padding: 0.4rem 0.75rem;
+    border-radius: 20px;
+}
+
+.maestro-card-rating i {
+    color: #f59e0b;
+    font-size: 1rem;
 }
 
 .maestro-card-info {
     margin-bottom: 1rem;
     flex: 1;
+    min-height: 0;
 }
 
 .maestro-card-info p {
-    margin: 0.5rem 0;
-    color: var(--gray-color);
-    font-size: 0.9rem;
+    margin: 0.75rem 0;
+    color: #2d3748;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.6;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.maestro-card-info p i {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
 }
 
 .maestro-card-tags {
@@ -600,28 +678,58 @@ main {
     justify-content: space-between;
     align-items: center;
     margin-top: auto;
-    padding-top: 1rem;
-    border-top: 1px solid var(--light-color);
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    flex-shrink: 0;
+    position: relative;
+}
+
+.maestro-card-footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 1.75rem;
+    right: 1.75rem;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.1) 50%, transparent 100%);
 }
 
 .maestro-card-status {
     display: flex;
     align-items: center;
-    gap: 5px;
-    font-size: 0.875rem;
-    font-weight: 500;
+    gap: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.4rem 0.75rem;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.03);
 }
 
 .status-disponible {
-    color: var(--success-color);
+    color: #16a34a;
+    background: rgba(22, 163, 74, 0.1);
+}
+
+.status-disponible i {
+    color: #16a34a;
 }
 
 .status-ocupado {
-    color: var(--warning-color);
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.status-ocupado i {
+    color: #f59e0b;
 }
 
 .status-no-disponible {
-    color: var(--gray-color);
+    color: #6b7280;
+    background: rgba(107, 114, 128, 0.1);
+}
+
+.status-no-disponible i {
+    color: #6b7280;
 }
 
 /* ============================================

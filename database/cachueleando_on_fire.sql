@@ -142,27 +142,6 @@ CREATE TABLE IF NOT EXISTS `portafolio` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================
--- Tabla: mensajes
--- Descripción: Sistema de mensajería entre clientes y maestros
--- =============================================
-CREATE TABLE IF NOT EXISTS `mensajes` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `cliente_id` INT(11) NOT NULL,
-  `maestro_id` INT(11) NOT NULL,
-  `mensaje` TEXT DEFAULT NULL,
-  `adjunto` VARCHAR(500) DEFAULT NULL,
-  `tipo` ENUM('texto','imagen','video','sticker') DEFAULT 'texto',
-  `enviado_por` ENUM('cliente', 'maestro') NOT NULL,
-  `leido` TINYINT(1) DEFAULT 0,
-  `fecha_envio` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  FOREIGN KEY (`cliente_id`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`maestro_id`) REFERENCES `maestros`(`id`) ON DELETE CASCADE,
-  INDEX `idx_conversacion` (`cliente_id`, `maestro_id`),
-  INDEX `idx_fecha_envio` (`fecha_envio`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- =============================================
 -- Tabla: trabajos
 -- Descripción: Trabajos realizados por maestros para clientes
 -- =============================================
@@ -231,7 +210,7 @@ CREATE TABLE IF NOT EXISTS `busquedas` (
 CREATE TABLE IF NOT EXISTS `notificaciones` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `usuario_id` INT(11) NOT NULL,
-  `tipo` ENUM('validacion', 'mensaje', 'trabajo', 'calificacion', 'sistema') NOT NULL,
+  `tipo` ENUM('validacion', 'trabajo', 'calificacion', 'sistema') NOT NULL,
   `titulo` VARCHAR(255) NOT NULL,
   `mensaje` TEXT NOT NULL,
   `leida` TINYINT(1) DEFAULT 0,
@@ -250,7 +229,7 @@ CREATE TABLE IF NOT EXISTS `reportes` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `reportado_por` INT(11) NOT NULL,
   `reportado_a` INT(11) NOT NULL,
-  `tipo` ENUM('usuario', 'trabajo', 'mensaje', 'otro') NOT NULL,
+  `tipo` ENUM('usuario', 'trabajo', 'otro') NOT NULL,
   `motivo` TEXT NOT NULL,
   `estado` ENUM('pendiente', 'en_revision', 'resuelto', 'descartado') DEFAULT 'pendiente',
   `fecha_reporte` DATETIME DEFAULT CURRENT_TIMESTAMP,

@@ -55,57 +55,10 @@ $title = 'Panel del Maestro';
             </div>
         </div>
         
-        <div class="col-3">
-            <div class="card">
-                <div class="card-body text-center">
-                    <i class="fas fa-comments" style="font-size: 3rem; color: var(--success-color);"></i>
-                    <h3><?php echo count($mensajes_recientes); ?></h3>
-                    <p>Conversaciones</p>
-                </div>
-            </div>
-        </div>
     </div>
     
     <div class="row mt-4">
-        <div class="col-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Mensajes Recientes</h3>
-                    <a href="<?php echo BASE_URL; ?>maestro/mensajes" class="btn btn-sm btn-outline">Ver Todos</a>
-                </div>
-                <div class="card-body">
-                    <?php if (!empty($mensajes_recientes)): ?>
-                        <?php foreach (array_slice($mensajes_recientes, 0, 5) as $conversacion): ?>
-                        <div class="message-item">
-                            <div class="d-flex align-items-center gap-2">
-                                <div>
-                                    <?php if (!empty($conversacion['foto_perfil'])): ?>
-                                        <img src="<?php echo UPLOAD_URL . $conversacion['foto_perfil']; ?>" alt="" style="width: 40px; height: 40px; border-radius: 50%;">
-                                    <?php else: ?>
-                                        <i class="fas fa-user-circle" style="font-size: 2rem; color: var(--gray-color);"></i>
-                                    <?php endif; ?>
-                                </div>
-                                <div style="flex: 1;">
-                                    <strong><?php echo htmlspecialchars($conversacion['nombre_completo']); ?></strong>
-                                    <p style="margin: 0; font-size: 0.875rem; color: var(--gray-color);">
-                                        <?php echo htmlspecialchars(substr($conversacion['ultimo_mensaje'], 0, 50)); ?>...
-                                    </p>
-                                </div>
-                                <?php if ($conversacion['no_leidos'] > 0): ?>
-                                <span class="badge" style="background: var(--primary-color); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
-                                    <?php echo $conversacion['no_leidos']; ?>
-                                </span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <hr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="text-center" style="color: var(--gray-color);">No hay mensajes</p>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
+
         
         <div class="col-6">
             <div class="card">
@@ -164,9 +117,7 @@ $title = 'Panel del Maestro';
                         <a href="<?php echo BASE_URL; ?>maestro/disponibilidad" class="btn btn-primary">
                             <i class="fas fa-clock"></i> Actualizar Disponibilidad
                         </a>
-                        <a href="<?php echo BASE_URL; ?>maestro/mensajes" class="btn btn-primary">
-                            <i class="fas fa-comments"></i> Ver Mensajes
-                        </a>
+
                     </div>
                 </div>
             </div>
@@ -177,7 +128,7 @@ $title = 'Panel del Maestro';
 <?php include __DIR__ . '/../../views/layout/testimonials.php'; ?>
 
 <style>
-.message-item, .rating-item {
+.rating-item {
     padding: 0.75rem 0;
 }
 

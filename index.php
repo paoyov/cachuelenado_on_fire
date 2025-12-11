@@ -28,16 +28,17 @@ $router->addRoute('auth/register', 'AuthController', 'processRegister');
 // Rutas de cliente
 $router->addRoute('cliente/dashboard', 'ClienteController', 'dashboard');
 $router->addRoute('cliente/perfil', 'ClienteController', 'perfil');
-$router->addRoute('cliente/mensajes', 'ClienteController', 'mensajes');
+
 $router->addRoute('cliente/historial', 'ClienteController', 'historial');
 $router->addRoute('cliente/calificaciones', 'ClienteController', 'calificaciones');
+$router->addRoute('cliente/calificar', 'ClienteController', 'calificar');
 
 // Rutas de maestro
 $router->addRoute('maestro/dashboard', 'MaestroController', 'dashboard');
 $router->addRoute('maestro/perfil-editar', 'MaestroController', 'editarPerfil');
 $router->addRoute('maestro/portafolio', 'MaestroController', 'portafolio');
 $router->addRoute('maestro/disponibilidad', 'MaestroController', 'disponibilidad');
-$router->addRoute('maestro/mensajes', 'MaestroController', 'mensajes');
+
 $router->addRoute('maestro/calificaciones', 'MaestroController', 'calificaciones');
 $router->addRoute('maestro/historial', 'MaestroController', 'historial');
 $router->addRoute('maestro/configuracion', 'MaestroController', 'configuracion');
@@ -50,16 +51,16 @@ $router->addRoute('admin/estadisticas', 'AdminController', 'estadisticas');
 $router->addRoute('admin/usuarios', 'AdminController', 'usuarios');
 $router->addRoute('admin/reportes', 'AdminController', 'reportes');
 $router->addRoute('admin/reportes-mensuales', 'AdminController', 'reportesMensuales');
+$router->addRoute('admin/get-maestro-details', 'AdminController', 'getMaestroDetails');
 
 // Rutas API
-$router->addRoute('api/mensajes/enviar', 'ApiController', 'enviarMensaje');
-$router->addRoute('api/mensajes/obtener', 'ApiController', 'obtenerMensajes');
+
 $router->addRoute('api/buscar', 'ApiController', 'buscar');
 $router->addRoute('api/disponibilidad', 'ApiController', 'actualizarDisponibilidad');
 $router->addRoute('api/calificar', 'ApiController', 'calificar');
 // API para marcar leídos
 $router->addRoute('api/notificaciones/marcar', 'ApiController', 'marcarNotificacion');
-$router->addRoute('api/mensajes/marcar', 'ApiController', 'marcarMensajesLeidos');
+
 
 // Procesar la ruta
 $url = isset($_GET['url']) ? $_GET['url'] : '';
