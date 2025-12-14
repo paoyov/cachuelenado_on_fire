@@ -71,6 +71,17 @@ $title = 'Editar Perfil';
         </div>
 
         <div class="form-group">
+            <label for="password" class="form-label">Nueva Contraseña <small style="color:var(--gray-color);">(dejar en blanco para mantener la actual)</small></label>
+            <div class="password-wrapper">
+                <input type="password" name="password" id="password" class="form-control" minlength="6">
+                <button type="button" class="password-toggle-btn" onclick="togglePassword('password')">
+                    <i class="fas fa-eye" id="password-icon"></i>
+                </button>
+            </div>
+            <small class="form-text">Mínimo 6 caracteres</small>
+        </div>
+
+        <div class="form-group">
             <button type="submit" class="btn btn-primary">Guardar Cambios</button>
         </div>
     </form>

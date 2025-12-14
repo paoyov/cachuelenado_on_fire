@@ -45,8 +45,21 @@ $title = 'Perfil del Maestro';
                 <div class="card-body">
                     <p><i class="fas fa-briefcase"></i> <strong>Experiencia:</strong> <?php echo $maestro['anios_experiencia']; ?> años</p>
                     <p><i class="fas fa-map-marker-alt"></i> <strong>Área:</strong> <?php echo htmlspecialchars($maestro['area_preferida'] ?: 'Lima'); ?></p>
-                    <p><i class="fas fa-check-circle"></i> <strong>Trabajos:</strong> <?php echo $maestro['total_trabajos']; ?> completados</p>
                     <p><i class="fas fa-eye"></i> <strong>Vistas:</strong> <?php echo $maestro['total_vistas']; ?></p>
+                    <?php if (!empty($maestro['telefono'])): ?>
+                        <p><i class="fas fa-phone"></i> <strong>Teléfono:</strong> <?php echo htmlspecialchars($maestro['telefono']); ?></p>
+                    <?php endif; ?>
+                    <?php if (!empty($maestro['telefono'])): ?>
+                        <?php 
+                        $telefono_limpio = preg_replace('/[^0-9]/', '', $maestro['telefono']);
+                        $whatsapp_url = "https://wa.me/51{$telefono_limpio}";
+                        ?>
+                        <p class="mt-3 mb-0">
+                            <a href="<?php echo $whatsapp_url; ?>" target="_blank" class="btn btn-success btn-sm btn-block">
+                                <i class="fab fa-whatsapp"></i> Contactar por WhatsApp
+                            </a>
+                        </p>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

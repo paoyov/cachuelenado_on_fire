@@ -23,7 +23,12 @@ $title = 'Iniciar Sesión';
                         <label for="password" class="form-label">
                             <i class="fas fa-lock"></i> Contraseña
                         </label>
-                        <input type="password" id="password" name="password" class="form-control" required>
+                        <div class="password-wrapper">
+                            <input type="password" id="password" name="password" class="form-control" required>
+                            <button type="button" class="password-toggle-btn" onclick="togglePassword('password')">
+                                <i class="fas fa-eye" id="password-icon"></i>
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="form-group">

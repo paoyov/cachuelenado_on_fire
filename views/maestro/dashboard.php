@@ -24,101 +24,109 @@ $title = 'Panel del Maestro';
     </div>
     <?php endif; ?>
     
-    <div class="row">
-        <div class="col-3">
-            <div class="card">
-                <div class="card-body text-center">
-                    <i class="fas fa-star" style="font-size: 3rem; color: var(--warning-color);"></i>
-                    <h3><?php echo number_format($maestro['calificacion_promedio'], 1); ?></h3>
-                    <p>Calificación Promedio</p>
-                </div>
+    <div class="maestro-ratings-card-wrapper">
+        <div class="ratings-card">
+            <div class="ratings-card-header">
+                <h3 class="ratings-card-title">
+                    <i class="fas fa-star"></i> Calificaciones Recientes
+                </h3>
+                <a href="<?php echo BASE_URL; ?>maestro/calificaciones" class="btn-ratings-view-all">
+                    Ver Todas <i class="fas fa-arrow-right"></i>
+                </a>
             </div>
-        </div>
-        
-        <div class="col-3">
-            <div class="card">
-                <div class="card-body text-center">
-                    <i class="fas fa-briefcase" style="font-size: 3rem; color: var(--primary-color);"></i>
-                    <h3><?php echo $maestro['total_trabajos']; ?></h3>
-                    <p>Trabajos Completados</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-3">
-            <div class="card">
-                <div class="card-body text-center">
-                    <i class="fas fa-eye" style="font-size: 3rem; color: var(--info-color);"></i>
-                    <h3><?php echo $maestro['total_vistas']; ?></h3>
-                    <p>Vistas del Perfil</p>
-                </div>
-            </div>
-        </div>
-        
-    </div>
-    
-    <div class="row mt-4">
-
-        
-        <div class="col-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Calificaciones Recientes</h3>
-                    <a href="<?php echo BASE_URL; ?>maestro/calificaciones" class="btn btn-sm btn-outline">Ver Todas</a>
-                </div>
-                <div class="card-body">
-                    <?php if (!empty($calificaciones_recientes)): ?>
-                        <?php foreach ($calificaciones_recientes as $calificacion): ?>
-                        <div class="rating-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong><?php echo htmlspecialchars($calificacion['nombre_completo']); ?></strong>
-                                    <div class="stars">
+            <div class="ratings-card-body">
+                <?php if (!empty($calificaciones_recientes)): ?>
+                    <?php foreach ($calificaciones_recientes as $calificacion): ?>
+                    <div class="rating-item">
+                        <div class="rating-header">
+                            <div class="rating-user-section">
+                                <div class="rating-user-avatar-small">
+                                    <?php if (!empty($calificacion['foto_perfil'])): ?>
+                                        <?php 
+                                        $inicial = strtoupper(substr($calificacion['nombre_completo'], 0, 1));
+                                        $foto_url = UPLOAD_URL . $calificacion['foto_perfil'];
+                                        ?>
+                                        <img src="<?php echo $foto_url; ?>" 
+                                             alt="<?php echo htmlspecialchars($calificacion['nombre_completo']); ?>"
+                                             onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <span class="avatar-fallback" style="display: none;"><?php echo $inicial; ?></span>
+                                    <?php else: ?>
+                                        <?php echo strtoupper(substr($calificacion['nombre_completo'], 0, 1)); ?>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="rating-user-info">
+                                    <strong class="rating-user-name"><?php echo htmlspecialchars($calificacion['nombre_completo']); ?></strong>
+                                    <div class="rating-stars">
                                         <?php 
                                         $promedio = ($calificacion['puntualidad'] + $calificacion['calidad'] + $calificacion['trato'] + $calificacion['limpieza']) / 4;
                                         for ($i = 1; $i <= 5; $i++): 
                                         ?>
-                                            <i class="fas fa-star <?php echo $i <= round($promedio) ? 'text-warning' : ''; ?>"></i>
+                                            <i class="fas fa-star <?php echo $i <= round($promedio) ? 'star-filled' : 'star-empty'; ?>"></i>
                                         <?php endfor; ?>
                                     </div>
                                 </div>
-                                <small style="color: var(--gray-color);"><?php echo formatDate($calificacion['fecha_calificacion']); ?></small>
                             </div>
-                            <?php if (!empty($calificacion['comentario'])): ?>
-                            <p style="margin-top: 0.5rem; color: var(--gray-color); font-size: 0.875rem;">
-                                <?php echo htmlspecialchars($calificacion['comentario']); ?>
-                            </p>
-                            <?php endif; ?>
+                            <span class="rating-date"><?php echo formatDate($calificacion['fecha_calificacion']); ?></span>
                         </div>
-                        <hr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="text-center" style="color: var(--gray-color);">No hay calificaciones</p>
-                    <?php endif; ?>
+                        <?php if (!empty($calificacion['comentario'])): ?>
+                        <p class="rating-comment">
+                            <?php echo htmlspecialchars($calificacion['comentario']); ?>
+                        </p>
+                        <?php endif; ?>
+                    </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="no-ratings">
+                        <i class="fas fa-star"></i>
+                        <p>No hay calificaciones aún</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    
+    <div class="maestro-dashboard-cards-wrapper">
+        <div class="maestro-dashboard-cards-row">
+            <div class="maestro-dashboard-card-item">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-star" style="font-size: 3rem; color: var(--warning-color);"></i>
+                        <h3><?php echo number_format($maestro['calificacion_promedio'], 1); ?></h3>
+                        <p>Calificación Promedio</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="maestro-dashboard-card-item">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-eye" style="font-size: 3rem; color: var(--info-color);"></i>
+                        <h3><?php echo $maestro['total_vistas']; ?></h3>
+                        <p>Vistas del Perfil</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Acciones Rápidas</h3>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex gap-2 flex-wrap">
-                        <a href="<?php echo BASE_URL; ?>maestro/perfil-editar" class="btn btn-primary">
-                            <i class="fas fa-user-edit"></i> Editar Perfil
-                        </a>
-                        <a href="<?php echo BASE_URL; ?>maestro/portafolio" class="btn btn-primary">
-                            <i class="fas fa-images"></i> Gestionar Portafolio
-                        </a>
-                        <a href="<?php echo BASE_URL; ?>maestro/disponibilidad" class="btn btn-primary">
-                            <i class="fas fa-clock"></i> Actualizar Disponibilidad
-                        </a>
-
-                    </div>
+    <div class="quick-actions-wrapper">
+        <div class="quick-actions-card">
+            <div class="quick-actions-header">
+                <h3 class="quick-actions-title">
+                    <i class="fas fa-bolt"></i> Acciones Rápidas
+                </h3>
+            </div>
+            <div class="quick-actions-body">
+                <div class="quick-actions-buttons">
+                    <a href="<?php echo BASE_URL; ?>maestro/perfil-editar" class="quick-action-btn">
+                        <i class="fas fa-user-edit"></i> Editar Perfil
+                    </a>
+                    <a href="<?php echo BASE_URL; ?>maestro/portafolio" class="quick-action-btn">
+                        <i class="fas fa-images"></i> Gestionar Portafolio
+                    </a>
+                    <a href="<?php echo BASE_URL; ?>maestro/disponibilidad" class="quick-action-btn">
+                        <i class="fas fa-clock"></i> Actualizar Disponibilidad
+                    </a>
                 </div>
             </div>
         </div>
@@ -127,21 +135,4 @@ $title = 'Panel del Maestro';
 
 <?php include __DIR__ . '/../../views/layout/testimonials.php'; ?>
 
-<style>
-.rating-item {
-    padding: 0.75rem 0;
-}
-
-.badge {
-    font-size: 0.75rem;
-}
-
-.stars {
-    color: #ddd;
-}
-
-.stars .text-warning {
-    color: var(--warning-color);
-}
-</style>
 

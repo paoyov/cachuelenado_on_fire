@@ -42,22 +42,22 @@ $title = 'Reportes de Maestros Rechazados';
                                             <?php if (!empty($r['foto_perfil'])): ?>
                                                 <img src="<?php echo UPLOAD_URL . $r['foto_perfil']; ?>" 
                                                      alt="<?php echo htmlspecialchars($r['nombre_completo']); ?>" 
-                                                     class="user-avatar me-3">
+                                                     class="user-avatar">
                                             <?php else: ?>
-                                                <div class="user-avatar me-3">
+                                                <div class="user-avatar">
                                                     <?php echo strtoupper(substr($r['nombre_completo'], 0, 1)); ?>
                                                 </div>
                                             <?php endif; ?>
-                                            <div>
+                                            <div class="user-info-wrapper">
                                                 <div class="user-name"><?php echo htmlspecialchars($r['nombre_completo']); ?></div>
-                                                <small class="text-muted"><?php echo htmlspecialchars($r['email']); ?></small>
+                                                <small class="text-muted user-email"><?php echo htmlspecialchars($r['email']); ?></small>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="motivo-rechazo">
                                             <i class="fas fa-ban text-danger me-2"></i>
-                                            <span><?php echo htmlspecialchars($r['motivo_rechazo']); ?></span>
+                                            <span><?php echo htmlspecialchars($r['motivo'] ?? 'No especificado'); ?></span>
                                         </div>
                                     </td>
                                     <td class="text-center">
@@ -67,13 +67,13 @@ $title = 'Reportes de Maestros Rechazados';
                                         </span>
                                     </td>
                                     <td class="text-center">
-                                        <?php if ($r['fecha_validacion']): ?>
+                                        <?php if ($r['fecha_reporte']): ?>
                                             <div class="date-info">
                                                 <i class="far fa-calendar-alt me-1"></i>
-                                                <?php echo date('d/m/Y', strtotime($r['fecha_validacion'])); ?>
+                                                <?php echo date('d/m/Y', strtotime($r['fecha_reporte'])); ?>
                                             </div>
                                             <small class="text-muted">
-                                                <?php echo date('H:i', strtotime($r['fecha_validacion'])); ?>
+                                                <?php echo date('H:i', strtotime($r['fecha_reporte'])); ?>
                                             </small>
                                         <?php else: ?>
                                             <span class="text-muted">N/A</span>
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Motivo de Rechazo
                 const motivoEl = document.getElementById('detail-motivo');
                 if (motivoEl) {
-                    motivoEl.textContent = report.motivo_rechazo || 'No especificado';
+                    motivoEl.textContent = report.motivo || report.motivo_rechazo || 'No especificado';
                 }
                 
                 // Fechas
@@ -274,8 +274,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     day: 'numeric'
                 });
                 
-                if (report.fecha_validacion) {
-                    const fechaRechazo = new Date(report.fecha_validacion);
+                if (report.fecha_reporte || report.fecha_validacion) {
+                    const fechaRechazo = new Date(report.fecha_reporte || report.fecha_validacion);
                     document.getElementById('detail-fecha-rechazo').textContent = fechaRechazo.toLocaleDateString('es-PE', {
                         year: 'numeric',
                         month: 'long',
@@ -373,12 +373,31 @@ document.addEventListener('DOMContentLoaded', function() {
     font-weight: 700;
     font-size: 1.1rem;
     flex-shrink: 0;
+    margin-right: 1.25rem;
+}
+
+.user-info-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.15rem 0;
 }
 
 .user-name {
     font-weight: 600;
     color: var(--dark-color);
-    margin-bottom: 2px;
+    letter-spacing: 0.4px;
+    line-height: 1.6;
+    font-size: 1.05rem;
+    margin: 0;
+    padding: 0;
+}
+
+.user-email {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.875rem;
+    opacity: 0.75;
 }
 
 .motivo-rechazo {

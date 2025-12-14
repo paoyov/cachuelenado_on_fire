@@ -52,7 +52,12 @@ $title = 'Mi Perfil - Cliente';
 
                         <div class="form-group mb-3">
                             <label for="password" class="form-label">Nueva contraseña <small style="color:var(--gray-color);">(dejar en blanco para mantener la actual)</small></label>
-                            <input type="password" name="password" id="password" class="form-control">
+                            <div class="password-wrapper">
+                                <input type="password" name="password" id="password" class="form-control">
+                                <button type="button" class="password-toggle-btn" onclick="togglePassword('password')">
+                                    <i class="fas fa-eye" id="password-icon"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="form-group mb-3">

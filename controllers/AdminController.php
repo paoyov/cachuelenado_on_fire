@@ -75,6 +75,19 @@ class AdminController extends Controller {
             $maestro = $this->maestroModel->getById($maestro_id);
             $usuario = $this->usuarioModel->getById($maestro['usuario_id']);
             
+            // Si se rechaza el maestro, crear un reporte en la tabla reportes
+            if ($accion === 'rechazar' && $motivo_rechazo) {
+                require_once 'models/Reporte.php';
+                $reporteModel = new Reporte($this->db);
+                $reporteModel->create([
+                    'reportado_por' => $_SESSION['usuario_id'], // Admin que rechaza
+                    'reportado_a' => $maestro['usuario_id'],   // Usuario maestro rechazado
+                    'tipo' => 'usuario',
+                    'motivo' => $motivo_rechazo,
+                    'estado' => 'resuelto' // Los rechazos se consideran resueltos
+                ]);
+            }
+            
             // Crear notificación
             $notificacionModel = new Notificacion($this->db);
             $titulo = $accion === 'validar' ? 'Perfil Validado' : 'Perfil Rechazado';
@@ -202,26 +215,10 @@ class AdminController extends Controller {
     }
 
     public function reportes() {
-        // Obtener maestros rechazados con motivo de rechazo
-        $query = "SELECT m.id as maestro_id,
-                         m.motivo_rechazo,
-                         m.estado_perfil,
-                         m.fecha_validacion,
-                         u.id as usuario_id,
-                         u.nombre_completo,
-                         u.email,
-                         u.fecha_registro,
-                         u.foto_perfil,
-                         admin.nombre_completo as validado_por_nombre
-                  FROM maestros m
-                  INNER JOIN usuarios u ON m.usuario_id = u.id
-                  LEFT JOIN usuarios admin ON m.validado_por = admin.id
-                  WHERE m.estado_perfil = 'rechazado' AND m.motivo_rechazo IS NOT NULL
-                  ORDER BY m.fecha_validacion DESC, u.fecha_registro DESC";
-
-        $stmt = $this->db->prepare($query);
-        $stmt->execute();
-        $reportes = $stmt->fetchAll();
+        // Obtener reportes de maestros rechazados desde la tabla reportes
+        require_once 'models/Reporte.php';
+        $reporteModel = new Reporte($this->db);
+        $reportes = $reporteModel->getMaestrosRechazados();
 
         // Export CSV
         if (isset($_GET['export']) && $_GET['export'] === 'csv') {
@@ -239,9 +236,9 @@ class AdminController extends Controller {
                     $r['maestro_id'],
                     $r['nombre_completo'],
                     $r['email'],
-                    $r['motivo_rechazo'],
-                    ucfirst($r['estado_perfil']),
-                    $r['fecha_validacion'] ? date('d/m/Y H:i', strtotime($r['fecha_validacion'])) : 'N/A',
+                    $r['motivo'] ?? $r['motivo_rechazo'] ?? 'No especificado',
+                    ucfirst($r['estado_perfil'] ?? 'rechazado'),
+                    $r['fecha_reporte'] ? date('d/m/Y H:i', strtotime($r['fecha_reporte'])) : ($r['fecha_validacion'] ? date('d/m/Y H:i', strtotime($r['fecha_validacion'])) : 'N/A'),
                     date('d/m/Y', strtotime($r['fecha_registro']))
                 ]);
             }
@@ -260,86 +257,195 @@ class AdminController extends Controller {
         $this->view('admin/reportes', $data);
     }
 
-    public function reportesMensuales() {
-        // Mes/Año seleccionados (opcional)
-        $selectedMes = isset($_GET['mes']) ? (int)$_GET['mes'] : null;
-        $selectedAno = isset($_GET['ano']) ? (int)$_GET['ano'] : null;
+    private function getMesEspanol($mes, $ano) {
+        $meses = [
+            'Jan' => 'Ene', 'Feb' => 'Feb', 'Mar' => 'Mar',
+            'Apr' => 'Abr', 'May' => 'May', 'Jun' => 'Jun',
+            'Jul' => 'Jul', 'Aug' => 'Ago', 'Sep' => 'Sep',
+            'Oct' => 'Oct', 'Nov' => 'Nov', 'Dec' => 'Dic'
+        ];
+        
+        $mesIngles = date('M', mktime(0, 0, 0, $mes, 1, $ano));
+        $mesEspanol = $meses[$mesIngles] ?? $mesIngles;
+        
+        return $mesEspanol . ' ' . $ano;
+    }
 
-        // Preparar los últimos 12 meses
-        $labels = [];
-        $months = [];
-        for ($i = 11; $i >= 0; $i--) {
-            $ts = strtotime("-{$i} months");
-            $m = (int)date('m', $ts);
-            $y = (int)date('Y', $ts);
-            $labels[] = date('M Y', $ts);
-            $months[] = ['mes' => $m, 'ano' => $y];
+    public function reportesMensuales() {
+        // Filtro de fechas (opcional)
+        $fechaDesde = isset($_GET['fecha_desde']) && !empty($_GET['fecha_desde']) ? $_GET['fecha_desde'] : null;
+        $fechaHasta = isset($_GET['fecha_hasta']) && !empty($_GET['fecha_hasta']) ? $_GET['fecha_hasta'] : null;
+        $usarFiltro = $fechaDesde !== null && $fechaHasta !== null;
+
+        // Validar que fecha_desde <= fecha_hasta
+        if ($usarFiltro && strtotime($fechaDesde) > strtotime($fechaHasta)) {
+            $_SESSION['error'] = 'La fecha inicial no puede ser mayor a la fecha final.';
+            $usarFiltro = false;
         }
 
+        $labels = [];
+        $months = [];
         $clientesSeries = [];
         $maestrosSeries = [];
         $trabajosSeries = [];
         $busquedasSeries = [];
         $reportesSeries = [];
 
-        // Consultas preparadas reutilizables
-        $qClientes = $this->db->prepare("SELECT COUNT(*) as total FROM usuarios WHERE tipo_usuario = 'cliente' AND MONTH(fecha_registro)=:mes AND YEAR(fecha_registro)=:ano");
-        $qMaestros = $this->db->prepare("SELECT COUNT(*) as total FROM usuarios WHERE tipo_usuario = 'maestro' AND MONTH(fecha_registro)=:mes AND YEAR(fecha_registro)=:ano");
-        $qTrabajos = $this->db->prepare("SELECT COUNT(*) as total FROM trabajos WHERE MONTH(fecha_creacion)=:mes AND YEAR(fecha_creacion)=:ano");
-        $qBusquedas = $this->db->prepare("SELECT COUNT(*) as total FROM busquedas WHERE MONTH(fecha_busqueda)=:mes AND YEAR(fecha_busqueda)=:ano");
-        $qReportes = $this->db->prepare("SELECT COUNT(*) as total FROM reportes WHERE MONTH(fecha_reporte)=:mes AND YEAR(fecha_reporte)=:ano");
+        if ($usarFiltro) {
+            // Filtrar por rango de fechas
+            $desde = date('Y-m-d 00:00:00', strtotime($fechaDesde));
+            $hasta = date('Y-m-d 23:59:59', strtotime($fechaHasta));
 
-        foreach ($months as $mInfo) {
-            $m = $mInfo['mes'];
-            $y = $mInfo['ano'];
+            // Generar array de meses entre las fechas
+            $start = new DateTime($fechaDesde);
+            $end = new DateTime($fechaHasta);
+            
+            // Calcular la diferencia en meses
+            $diffMonths = (int)$start->diff($end)->format('%m') + ($start->format('Y') != $end->format('Y') ? ($end->format('Y') - $start->format('Y')) * 12 : 0);
+            
+            // Si el rango es menor a un mes, mostrar solo un período
+            if ($diffMonths == 0 || ($start->format('Y-m') == $end->format('Y-m'))) {
+                $m = (int)$start->format('m');
+                $y = (int)$start->format('Y');
+                $labels[] = $this->getMesEspanol($m, $y);
+                $months[] = ['mes' => $m, 'ano' => $y, 'inicio' => $desde, 'fin' => $hasta];
+            } else {
+                // Generar períodos mensuales
+                $current = clone $start;
+                $current->modify('first day of this month');
+                
+                while ($current <= $end) {
+                    $m = (int)$current->format('m');
+                    $y = (int)$current->format('Y');
+                    
+                    // Determinar inicio y fin del período
+                    $periodStart = ($current->format('Y-m') == $start->format('Y-m')) ? $desde : $current->format('Y-m-01 00:00:00');
+                    $periodEnd = ($current->format('Y-m') == $end->format('Y-m')) ? $hasta : $current->format('Y-m-t 23:59:59');
+                    
+                    $labels[] = $this->getMesEspanol($m, $y);
+                    $months[] = ['mes' => $m, 'ano' => $y, 'inicio' => $periodStart, 'fin' => $periodEnd];
+                    
+                    $current->modify('+1 month');
+                }
+            }
 
-            $qClientes->execute([':mes' => $m, ':ano' => $y]);
-            $r = $qClientes->fetch();
-            $clientesSeries[] = (int)($r['total'] ?? 0);
+            // Consultas con filtro de rango de fechas
+            foreach ($months as $mInfo) {
+                $inicio = $mInfo['inicio'];
+                $fin = $mInfo['fin'];
 
-            $qMaestros->execute([':mes' => $m, ':ano' => $y]);
-            $r = $qMaestros->fetch();
-            $maestrosSeries[] = (int)($r['total'] ?? 0);
+                // Clientes
+                $qClientes = $this->db->prepare("SELECT COUNT(*) as total FROM usuarios WHERE tipo_usuario = 'cliente' AND fecha_registro >= :inicio AND fecha_registro <= :fin");
+                $qClientes->execute([':inicio' => $inicio, ':fin' => $fin]);
+                $r = $qClientes->fetch();
+                $clientesSeries[] = (int)($r['total'] ?? 0);
 
-            $qTrabajos->execute([':mes' => $m, ':ano' => $y]);
-            $r = $qTrabajos->fetch();
-            $trabajosSeries[] = (int)($r['total'] ?? 0);
+                // Maestros
+                $qMaestros = $this->db->prepare("SELECT COUNT(*) as total FROM usuarios WHERE tipo_usuario = 'maestro' AND fecha_registro >= :inicio AND fecha_registro <= :fin");
+                $qMaestros->execute([':inicio' => $inicio, ':fin' => $fin]);
+                $r = $qMaestros->fetch();
+                $maestrosSeries[] = (int)($r['total'] ?? 0);
 
-            $qBusquedas->execute([':mes' => $m, ':ano' => $y]);
-            $r = $qBusquedas->fetch();
-            $busquedasSeries[] = (int)($r['total'] ?? 0);
+                // Trabajos
+                $qTrabajos = $this->db->prepare("SELECT COUNT(*) as total FROM trabajos WHERE fecha_creacion >= :inicio AND fecha_creacion <= :fin");
+                $qTrabajos->execute([':inicio' => $inicio, ':fin' => $fin]);
+                $r = $qTrabajos->fetch();
+                $trabajosSeries[] = (int)($r['total'] ?? 0);
 
-            $qReportes->execute([':mes' => $m, ':ano' => $y]);
-            $r = $qReportes->fetch();
-            $reportesSeries[] = (int)($r['total'] ?? 0);
+                // Búsquedas
+                $qBusquedas = $this->db->prepare("SELECT COUNT(*) as total FROM busquedas WHERE fecha_busqueda >= :inicio AND fecha_busqueda <= :fin");
+                $qBusquedas->execute([':inicio' => $inicio, ':fin' => $fin]);
+                $r = $qBusquedas->fetch();
+                $busquedasSeries[] = (int)($r['total'] ?? 0);
+
+                // Reportes
+                $qReportes = $this->db->prepare("SELECT COUNT(*) as total FROM reportes WHERE fecha_reporte >= :inicio AND fecha_reporte <= :fin");
+                $qReportes->execute([':inicio' => $inicio, ':fin' => $fin]);
+                $r = $qReportes->fetch();
+                $reportesSeries[] = (int)($r['total'] ?? 0);
+            }
+        } else {
+            // Comportamiento por defecto: últimos 12 meses
+            for ($i = 11; $i >= 0; $i--) {
+                $ts = strtotime("-{$i} months");
+                $m = (int)date('m', $ts);
+                $y = (int)date('Y', $ts);
+                $labels[] = $this->getMesEspanol($m, $y);
+                $months[] = ['mes' => $m, 'ano' => $y];
+            }
+
+            // Consultas preparadas reutilizables (por mes/año)
+            $qClientes = $this->db->prepare("SELECT COUNT(*) as total FROM usuarios WHERE tipo_usuario = 'cliente' AND MONTH(fecha_registro)=:mes AND YEAR(fecha_registro)=:ano");
+            $qMaestros = $this->db->prepare("SELECT COUNT(*) as total FROM usuarios WHERE tipo_usuario = 'maestro' AND MONTH(fecha_registro)=:mes AND YEAR(fecha_registro)=:ano");
+            $qTrabajos = $this->db->prepare("SELECT COUNT(*) as total FROM trabajos WHERE MONTH(fecha_creacion)=:mes AND YEAR(fecha_creacion)=:ano");
+            $qBusquedas = $this->db->prepare("SELECT COUNT(*) as total FROM busquedas WHERE MONTH(fecha_busqueda)=:mes AND YEAR(fecha_busqueda)=:ano");
+            $qReportes = $this->db->prepare("SELECT COUNT(*) as total FROM reportes WHERE MONTH(fecha_reporte)=:mes AND YEAR(fecha_reporte)=:ano");
+
+            foreach ($months as $mInfo) {
+                $m = $mInfo['mes'];
+                $y = $mInfo['ano'];
+
+                $qClientes->execute([':mes' => $m, ':ano' => $y]);
+                $r = $qClientes->fetch();
+                $clientesSeries[] = (int)($r['total'] ?? 0);
+
+                $qMaestros->execute([':mes' => $m, ':ano' => $y]);
+                $r = $qMaestros->fetch();
+                $maestrosSeries[] = (int)($r['total'] ?? 0);
+
+                $qTrabajos->execute([':mes' => $m, ':ano' => $y]);
+                $r = $qTrabajos->fetch();
+                $trabajosSeries[] = (int)($r['total'] ?? 0);
+
+                $qBusquedas->execute([':mes' => $m, ':ano' => $y]);
+                $r = $qBusquedas->fetch();
+                $busquedasSeries[] = (int)($r['total'] ?? 0);
+
+                $qReportes->execute([':mes' => $m, ':ano' => $y]);
+                $r = $qReportes->fetch();
+                $reportesSeries[] = (int)($r['total'] ?? 0);
+            }
         }
 
-        // Si el usuario pidió exportar CSV de los últimos 12 meses
+        // Exportar CSV
         if (isset($_GET['export']) && $_GET['export'] === 'csv') {
-            $filename = 'reportes_mensuales_' . date('Ymd_His') . '.csv';
-            header('Content-Encoding: UTF-8');
-            header('Content-Type: text/csv; charset=UTF-8');
-            header('Content-Disposition: attachment; filename="' . $filename . '"');
-            echo "\xEF\xBB\xBF";
-            $out = fopen('php://output', 'w');
-            fputcsv($out, ['Mes', 'Clientes', 'Maestros', 'Trabajos', 'Busquedas', 'Reportes']);
-            for ($i = 0; $i < count($labels); $i++) {
-                fputcsv($out, [$labels[$i], $clientesSeries[$i], $maestrosSeries[$i], $trabajosSeries[$i], $busquedasSeries[$i], $reportesSeries[$i]]);
+            if ($usarFiltro) {
+                $filename = 'Reportes_Mensuales_' . date('d-m-Y', strtotime($fechaDesde)) . '_al_' . date('d-m-Y', strtotime($fechaHasta)) . '.csv';
+            } else {
+                $filename = 'Reportes_Mensuales_' . date('d-m-Y_His') . '.csv';
             }
-            fclose($out);
+            
+            // Headers para Excel en español (usar punto y coma como separador)
+            header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            
+            // BOM UTF-8 para Excel
+            echo "\xEF\xBB\xBF";
+            
+            // Headers en español (eliminado Trabajos)
+            echo "Mes;Clientes;Maestros;Búsquedas;Reportes\n";
+            
+            // Escribir datos (usar punto y coma como separador para compatibilidad con Excel en español)
+            for ($i = 0; $i < count($labels); $i++) {
+                $mes = str_replace(',', '', $labels[$i]); // Limpiar comas del mes
+                $clientes = (int)($clientesSeries[$i] ?? 0);
+                $maestros = (int)($maestrosSeries[$i] ?? 0);
+                $busquedas = (int)($busquedasSeries[$i] ?? 0);
+                $reportes = (int)($reportesSeries[$i] ?? 0);
+                
+                // Usar punto y coma como separador y escapar valores si contienen punto y coma
+                echo '"' . str_replace('"', '""', $mes) . '";';
+                echo $clientes . ';';
+                echo $maestros . ';';
+                echo $busquedas . ';';
+                echo $reportes . "\n";
+            }
             exit;
         }
 
         // Datos resumen para el mes seleccionado (por defecto el más reciente)
-        $selectedIndex = count($labels) - 1; // último mes por defecto
-        if ($selectedMes !== null && $selectedAno !== null) {
-            foreach ($months as $idx => $mInfo) {
-                if ($mInfo['mes'] == $selectedMes && $mInfo['ano'] == $selectedAno) {
-                    $selectedIndex = $idx;
-                    break;
-                }
-            }
-        }
+        $selectedIndex = count($labels) > 0 ? count($labels) - 1 : 0;
 
         $data = [
             'labels' => $labels,
@@ -348,12 +454,15 @@ class AdminController extends Controller {
             'trabajos_series' => $trabajosSeries,
             'busquedas_series' => $busquedasSeries,
             'reportes_series' => $reportesSeries,
-            'selected_label' => $labels[$selectedIndex],
-            'selected_cliente' => $clientesSeries[$selectedIndex],
-            'selected_maestro' => $maestrosSeries[$selectedIndex],
-            'selected_trabajo' => $trabajosSeries[$selectedIndex],
-            'selected_busqueda' => $busquedasSeries[$selectedIndex],
-            'selected_reporte' => $reportesSeries[$selectedIndex]
+            'selected_label' => count($labels) > 0 ? $labels[$selectedIndex] : $this->getMesEspanol((int)date('m'), (int)date('Y')),
+            'selected_cliente' => count($clientesSeries) > 0 ? $clientesSeries[$selectedIndex] : 0,
+            'selected_maestro' => count($maestrosSeries) > 0 ? $maestrosSeries[$selectedIndex] : 0,
+            'selected_trabajo' => count($trabajosSeries) > 0 ? $trabajosSeries[$selectedIndex] : 0,
+            'selected_busqueda' => count($busquedasSeries) > 0 ? $busquedasSeries[$selectedIndex] : 0,
+            'selected_reporte' => count($reportesSeries) > 0 ? $reportesSeries[$selectedIndex] : 0,
+            'fecha_desde' => $fechaDesde,
+            'fecha_hasta' => $fechaHasta,
+            'usar_filtro' => $usarFiltro
         ];
 
         $this->view('admin/reportes-mensuales', $data);

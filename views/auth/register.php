@@ -39,7 +39,12 @@ $extra_js = ['js/register.js'];
                     
                     <div class="form-group">
                         <label for="password" class="form-label">Contraseña *</label>
-                        <input type="password" id="password" name="password" class="form-control" required minlength="6">
+                        <div class="password-wrapper">
+                            <input type="password" id="password" name="password" class="form-control" required minlength="6">
+                            <button type="button" class="password-toggle-btn" onclick="togglePassword('password')">
+                                <i class="fas fa-eye" id="password-icon"></i>
+                            </button>
+                        </div>
                         <small class="form-text">Mínimo 6 caracteres</small>
                     </div>
                     
@@ -99,7 +104,7 @@ $extra_js = ['js/register.js'];
                                     <i class="fas fa-id-card text-primary"></i> DNI Escaneado *
                                     <span class="badge bg-primary">Requerido</span>
                                 </label>
-                                <input type="file" name="documentos[dni][]" class="form-control document-input" accept=".pdf,.jpg,.jpeg,.png" id="dni_file" required>
+                                <input type="file" name="documentos[dni][]" class="form-control document-input" accept=".pdf,.jpg,.jpeg,.png" id="dni_file">
                                 <small class="form-text">Sube una copia clara de tu DNI (ambos lados si es posible)</small>
                             </div>
                             

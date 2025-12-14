@@ -89,6 +89,9 @@ class MaestroController extends Controller {
                 if (isset($_POST['telefono'])) {
                     $usuarioData['telefono'] = sanitize($_POST['telefono']);
                 }
+                if (isset($_POST['password']) && !empty($_POST['password'])) {
+                    $usuarioData['password'] = $_POST['password'];
+                }
                 if (isset($_FILES['foto_perfil']) && $_FILES['foto_perfil']['error'] === UPLOAD_ERR_OK) {
                     $upload = $this->uploadFile($_FILES['foto_perfil'], 'perfiles', ALLOWED_IMAGE_TYPES);
                     if ($upload['success']) {

@@ -102,7 +102,9 @@ $title = 'Buscar Maestros';
                                 <div class="maestro-card-info">
                                     <p><i class="fas fa-briefcase"></i> <?php echo $maestro['anios_experiencia']; ?> años de experiencia</p>
                                     <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($maestro['area_preferida'] ?: 'Lima'); ?></p>
-                                    <p><i class="fas fa-check-circle"></i> <?php echo $maestro['total_trabajos']; ?> trabajos completados</p>
+                                    <?php if (!empty($maestro['telefono'])): ?>
+                                        <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($maestro['telefono']); ?></p>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="maestro-card-footer">
                                     <span class="maestro-card-status status-<?php echo $maestro['disponibilidad']; ?>">
@@ -116,8 +118,18 @@ $title = 'Buscar Maestros';
                                         echo $status[$maestro['disponibilidad']] ?? 'Disponible';
                                         ?>
                                     </span>
-
-                                    <a href="<?php echo BASE_URL; ?>maestro/perfil?id=<?php echo $maestro['id']; ?>" class="btn btn-primary btn-sm">Ver Perfil</a>
+                                    <div class="maestro-card-actions">
+                                        <?php if (!empty($maestro['telefono'])): ?>
+                                            <?php 
+                                            $telefono_limpio = preg_replace('/[^0-9]/', '', $maestro['telefono']);
+                                            $whatsapp_url = "https://wa.me/51{$telefono_limpio}";
+                                            ?>
+                                            <a href="<?php echo $whatsapp_url; ?>" target="_blank" class="btn btn-success btn-sm" title="Contactar por WhatsApp">
+                                                <i class="fab fa-whatsapp"></i> Contactar
+                                            </a>
+                                        <?php endif; ?>
+                                        <a href="<?php echo BASE_URL; ?>maestro/perfil?id=<?php echo $maestro['id']; ?>" class="btn btn-primary btn-sm">Ver Perfil</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>

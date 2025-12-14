@@ -63,15 +63,30 @@
                             <form action="<?= url('admin/actualizarPassword') ?>" method="POST">
                                 <div class="mb-3">
                                     <label for="password_actual" class="form-label">Contraseña Actual</label>
-                                    <input type="password" class="form-control" id="password_actual" name="password_actual" required>
+                                    <div class="password-wrapper">
+                                        <input type="password" class="form-control" id="password_actual" name="password_actual" required>
+                                        <button type="button" class="password-toggle-btn" onclick="togglePassword('password_actual')">
+                                            <i class="fas fa-eye" id="password_actual-icon"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="password_nueva" class="form-label">Nueva Contraseña</label>
-                                    <input type="password" class="form-control" id="password_nueva" name="password_nueva" required minlength="6">
+                                    <div class="password-wrapper">
+                                        <input type="password" class="form-control" id="password_nueva" name="password_nueva" required minlength="6">
+                                        <button type="button" class="password-toggle-btn" onclick="togglePassword('password_nueva')">
+                                            <i class="fas fa-eye" id="password_nueva-icon"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="password_confirmar" class="form-label">Confirmar Nueva Contraseña</label>
-                                    <input type="password" class="form-control" id="password_confirmar" name="password_confirmar" required minlength="6">
+                                    <div class="password-wrapper">
+                                        <input type="password" class="form-control" id="password_confirmar" name="password_confirmar" required minlength="6">
+                                        <button type="button" class="password-toggle-btn" onclick="togglePassword('password_confirmar')">
+                                            <i class="fas fa-eye" id="password_confirmar-icon"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="d-grid">
                                     <button type="submit" class="btn btn-warning">Actualizar Contraseña</button>

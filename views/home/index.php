@@ -301,6 +301,19 @@ $title = 'Inicio';
     background: var(--light-color);
 }
 
+.maestros-destacados .row {
+    margin: 0 -20px;
+}
+
+.maestros-destacados .col-4 {
+    padding: 0 20px;
+    margin-bottom: 2.5rem;
+}
+
+.maestros-destacados .maestro-card {
+    margin-bottom: 0;
+}
+
 @media (max-width: 768px) {
     .hero-content h1 {
         font-size: 2rem;
