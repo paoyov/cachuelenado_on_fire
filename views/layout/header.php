@@ -77,7 +77,6 @@
                                 <?php elseif (isMaestro()): ?>
                                     <li><a href="<?php echo BASE_URL; ?>maestro/perfil-editar"><i class="fas fa-user-edit"></i> Editar Perfil</a></li>
                                     <li><a href="<?php echo BASE_URL; ?>maestro/portafolio"><i class="fas fa-images"></i> Portafolio</a></li>
-                                    <li><a href="<?php echo BASE_URL; ?>maestro/configuracion"><i class="fas fa-cog"></i> Configuración</a></li>
                                 <?php elseif (isAdmin()): ?>
                                     <li><a href="<?php echo BASE_URL; ?>admin/perfil"><i class="fas fa-user-shield"></i> Mi Perfil</a></li>
                                     <li><a href="<?php echo BASE_URL; ?>admin/estadisticas"><i class="fas fa-chart-bar"></i> Estadísticas</a></li>

@@ -420,3 +420,6 @@ $title = 'Inicio';
 }
 </style>
 
+<!-- Chatbot Script -->
+<script src="<?php echo asset('js/chatbot.js'); ?>"></script>
+
