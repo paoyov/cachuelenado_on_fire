@@ -132,7 +132,10 @@ class Maestro {
         $query = "SELECT DISTINCT m.*, u.nombre_completo, u.email, u.telefono, u.foto_perfil, u.chapa
                   FROM {$this->table} m
                   INNER JOIN usuarios u ON m.usuario_id = u.id
-                  WHERE m.estado_perfil = 'validado' AND u.estado = 'activo'";
+                  WHERE m.estado_perfil = 'validado' 
+                  AND u.estado = 'activo'
+                  AND m.pago_activo = 1
+                  AND (m.fecha_expiracion_pago IS NULL OR m.fecha_expiracion_pago > NOW())";
         
         $params = [];
 

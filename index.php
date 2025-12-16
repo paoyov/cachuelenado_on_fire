@@ -52,6 +52,12 @@ $router->addRoute('admin/usuarios', 'AdminController', 'usuarios');
 $router->addRoute('admin/reportes', 'AdminController', 'reportes');
 $router->addRoute('admin/reportes-mensuales', 'AdminController', 'reportesMensuales');
 $router->addRoute('admin/get-maestro-details', 'AdminController', 'getMaestroDetails');
+$router->addRoute('admin/pagos', 'AdminController', 'pagos');
+
+// Rutas de pago
+$router->addRoute('pago/procesar', 'PagoController', 'procesarPago');
+$router->addRoute('pago/verificar', 'PagoController', 'verificarPago');
+$router->addRoute('pago/cerrar-modal', 'PagoController', 'cerrarModal');
 
 // Rutas API
 

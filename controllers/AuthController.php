@@ -157,8 +157,14 @@ class AuthController extends Controller {
             $_SESSION['nombre_completo'] = $nombre_completo;
             $_SESSION['foto_perfil'] = $foto_perfil;
 
+            // Si es maestro, guardar maestro_id en sesión para mostrar modal de pago
+            if ($tipo_usuario === 'maestro' && isset($maestro_id)) {
+                $_SESSION['maestro_id'] = $maestro_id;
+                $_SESSION['mostrar_modal_pago'] = true;
+            }
+
             $_SESSION['success'] = 'Registro exitoso. ' . 
-                ($tipo_usuario === 'maestro' ? 'Su perfil está pendiente de validación.' : '');
+                ($tipo_usuario === 'maestro' ? 'Complete el pago para activar su perfil.' : '');
             
             redirect($this->getDashboardUrl());
         } else {

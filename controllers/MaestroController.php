@@ -23,12 +23,20 @@ class MaestroController extends Controller {
 
         $calificacionModel = new Calificacion($this->db);
         $notificacionModel = new Notificacion($this->db);
+        
+        // Verificar estado de pago
+        require_once 'models/PagoMaestro.php';
+        $pagoModel = new PagoMaestro($this->db);
+        $pago_activo = $pagoModel->getPagoActivo($maestro['id']);
+        $mostrar_modal = isset($_SESSION['mostrar_modal_pago']) && $_SESSION['mostrar_modal_pago'];
 
         $data = [
             'maestro' => $maestro,
             'calificaciones_recientes' => $calificacionModel->getByMaestro($maestro['id'], 5),
             'notificaciones' => $notificacionModel->getByUsuario($_SESSION['usuario_id'], 5, true),
-            'calificaciones_globales' => $calificacionModel->getRecent(6)
+            'calificaciones_globales' => $calificacionModel->getRecent(6),
+            'pago_activo' => $pago_activo,
+            'mostrar_modal_pago' => $mostrar_modal
         ];
 
         $this->view('maestro/dashboard', $data);

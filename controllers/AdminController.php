@@ -54,6 +54,38 @@ class AdminController extends Controller {
         $this->view('admin/maestros', $data);
     }
 
+    public function pagos() {
+        require_once 'models/PagoMaestro.php';
+        $pagoModel = new PagoMaestro($this->db);
+        
+        $estado = $_GET['estado'] ?? 'pendiente';
+        
+        if ($estado === 'pendiente') {
+            $pagos = $pagoModel->getPendientes();
+        } else {
+            $query = "SELECT p.*, m.usuario_id, u.nombre_completo, u.email, u.telefono,
+                             admin.nombre_completo as admin_nombre
+                      FROM pagos_maestros p
+                      INNER JOIN maestros m ON p.maestro_id = m.id
+                      INNER JOIN usuarios u ON p.usuario_id = u.id
+                      LEFT JOIN usuarios admin ON p.verificado_por = admin.id
+                      WHERE p.estado = :estado
+                      ORDER BY p.fecha_pago DESC";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':estado', $estado);
+            $stmt->execute();
+            $pagos = $stmt->fetchAll();
+        }
+
+        $data = [
+            'pagos' => $pagos,
+            'estado' => $estado,
+            'db' => $this->db
+        ];
+
+        $this->view('admin/pagos', $data);
+    }
+
     public function validarPerfil() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             redirect('admin/maestros');
@@ -66,6 +98,23 @@ class AdminController extends Controller {
         if (!in_array($accion, ['validar', 'rechazar'])) {
             $_SESSION['error'] = 'Acción inválida';
             redirect('admin/maestros');
+        }
+
+        // Verificar que el maestro tenga un pago (pendiente o verificado) antes de validar
+        if ($accion === 'validar') {
+            require_once 'models/PagoMaestro.php';
+            $pagoModel = new PagoMaestro($this->db);
+            $pago = $pagoModel->getPagoParaValidar($maestro_id);
+            
+            if (!$pago) {
+                $_SESSION['error'] = 'No se puede validar el perfil. El maestro debe haber realizado un pago primero.';
+                redirect('admin/maestros');
+            }
+            
+            // Si el pago está pendiente, verificarlo automáticamente al validar el perfil
+            if ($pago['estado'] === 'pendiente') {
+                $pagoModel->verificar($pago['id'], $_SESSION['usuario_id'], 'Pago verificado automáticamente al validar el perfil');
+            }
         }
 
         $estado = $accion === 'validar' ? 'validado' : 'rechazado';

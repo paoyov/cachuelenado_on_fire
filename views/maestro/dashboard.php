@@ -10,6 +10,31 @@ $title = 'Panel del Maestro';
 </div>
 
 <div class="container">
+    <?php 
+    $pago_activo = $pago_activo ?? null;
+    $mostrar_modal = $mostrar_modal_pago ?? false;
+    ?>
+    
+    <?php if (!$pago_activo || (isset($pago_activo['fecha_expiracion']) && strtotime($pago_activo['fecha_expiracion']) < time())): ?>
+    <div class="alert alert-warning" style="background: #fff3cd; border-left: 4px solid var(--warning-color);">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>Pago Requerido:</strong> Para que tu perfil sea visible y validado, debes realizar un pago de S/ 3.00. 
+        <button type="button" class="btn btn-sm btn-primary ml-2" onclick="abrirModalPago()" style="background: var(--primary-color);">
+            <i class="fas fa-wallet"></i> Realizar Pago
+        </button>
+    </div>
+    <?php elseif (isset($pago_activo['fecha_expiracion'])): 
+        $horas_restantes = (strtotime($pago_activo['fecha_expiracion']) - time()) / 3600;
+        if ($horas_restantes < 6 && $horas_restantes > 0): ?>
+    <div class="alert alert-warning" style="background: #fff3cd; border-left: 4px solid var(--warning-color);">
+        <i class="fas fa-clock"></i>
+        <strong>Atención:</strong> Tu pago expirará en <?php echo round($horas_restantes, 1); ?> horas. 
+        <button type="button" class="btn btn-sm btn-primary ml-2" onclick="abrirModalPago()" style="background: var(--primary-color);">
+            <i class="fas fa-wallet"></i> Renovar Pago
+        </button>
+    </div>
+    <?php endif; endif; ?>
+    
     <?php if ($maestro['estado_perfil'] === 'pendiente'): ?>
     <div class="alert alert-error">
         <i class="fas fa-clock"></i>
@@ -134,5 +159,25 @@ $title = 'Panel del Maestro';
 </div>
 
 <?php include __DIR__ . '/../../views/layout/testimonials.php'; ?>
+
+<?php if ($mostrar_modal || !$pago_activo): ?>
+    <?php include 'modal_pago.php'; ?>
+<?php endif; ?>
+
+<script>
+function abrirModalPago() {
+    const modal = document.getElementById('modalPagoYape');
+    if (modal) {
+        modal.style.display = 'block';
+    }
+}
+
+// Mostrar modal automáticamente si está en sesión
+<?php if ($mostrar_modal): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    abrirModalPago();
+});
+<?php endif; ?>
+</script>
 
 

@@ -48,6 +48,8 @@ CREATE TABLE IF NOT EXISTS `maestros` (
   `notificaciones_activas` TINYINT(1) DEFAULT 1,
   `fecha_validacion` DATETIME DEFAULT NULL,
   `validado_por` INT(11) DEFAULT NULL,
+  `pago_activo` TINYINT(1) DEFAULT 0,
+  `fecha_expiracion_pago` DATETIME DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `usuario_id` (`usuario_id`),
   FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE,
@@ -106,6 +108,33 @@ CREATE TABLE IF NOT EXISTS `maestro_distritos` (
   UNIQUE KEY `maestro_distrito` (`maestro_id`, `distrito_id`),
   FOREIGN KEY (`maestro_id`) REFERENCES `maestros`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`distrito_id`) REFERENCES `distritos`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================
+-- Tabla: pagos_maestros
+-- Descripción: Registro de pagos realizados por maestros para validación
+-- =============================================
+CREATE TABLE IF NOT EXISTS `pagos_maestros` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `maestro_id` INT(11) NOT NULL,
+  `usuario_id` INT(11) NOT NULL,
+  `monto` DECIMAL(10,2) NOT NULL DEFAULT 3.00,
+  `metodo_pago` VARCHAR(50) DEFAULT 'yape',
+  `numero_comprobante` VARCHAR(255) DEFAULT NULL,
+  `comprobante_imagen` VARCHAR(255) DEFAULT NULL,
+  `estado` ENUM('pendiente', 'verificado', 'rechazado') DEFAULT 'pendiente',
+  `fecha_pago` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `fecha_verificacion` DATETIME DEFAULT NULL,
+  `fecha_expiracion` DATETIME NOT NULL,
+  `verificado_por` INT(11) DEFAULT NULL,
+  `observaciones` TEXT DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`maestro_id`) REFERENCES `maestros`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`verificado_por`) REFERENCES `usuarios`(`id`) ON DELETE SET NULL,
+  INDEX `idx_maestro_estado` (`maestro_id`, `estado`),
+  INDEX `idx_fecha_expiracion` (`fecha_expiracion`),
+  INDEX `idx_estado` (`estado`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================
