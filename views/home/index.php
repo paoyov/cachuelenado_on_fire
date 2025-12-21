@@ -15,6 +15,57 @@ $title = 'Inicio';
     </div>
 </section>
 
+<!-- Sección de Video -->
+<section class="video-section">
+    <div class="container">
+        <div class="video-wrapper">
+            <div class="video-header">
+                <h2 class="video-title">
+                    <i class="fas fa-play-circle"></i> Conoce Nuestra Plataforma
+                </h2>
+                <p class="video-subtitle">Descubre cómo conectamos a los mejores maestros de oficio con clientes en Lima</p>
+            </div>
+            <div class="video-container">
+                <div class="video-player-wrapper">
+                    <video 
+                        id="homeVideo" 
+                        class="video-player" 
+                        controls 
+                        preload="metadata"
+                        <?php if (file_exists(BASE_PATH . 'assets/images/video-poster.jpg')): ?>
+                        poster="<?php echo BASE_URL; ?>assets/images/video-poster.jpg"
+                        <?php endif; ?>
+                        playsinline>
+                        <source src="<?php echo BASE_URL; ?>assets/videos/video_con.mp4" type="video/mp4">
+                        Tu navegador no soporta la reproducción de videos.
+                    </video>
+                    <div class="video-overlay">
+                        <button class="video-play-btn" id="videoPlayBtn" aria-label="Reproducir video">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="video-info">
+                    <div class="video-features">
+                        <div class="video-feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Plataforma 100% segura</span>
+                        </div>
+                        <div class="video-feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Maestros verificados</span>
+                        </div>
+                        <div class="video-feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Calificaciones reales</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <section class="features">
     <div class="container">
         <h2 class="section-title">¿Por qué elegirnos?</h2>
@@ -460,7 +511,317 @@ $title = 'Inicio';
     display: block;
     margin-bottom: 8px;
 }
+
+/* ============================================
+   Sección de Video
+   ============================================ */
+.video-section {
+    padding: 5rem 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.video-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(255, 107, 53, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 107, 53, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.video-wrapper {
+    position: relative;
+    z-index: 1;
+}
+
+.video-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.video-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--dark-color);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.video-title i {
+    color: var(--primary-color);
+    font-size: 2.5rem;
+    animation: pulse-video-icon 2s ease infinite;
+}
+
+@keyframes pulse-video-icon {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.video-subtitle {
+    font-size: 1.2rem;
+    color: var(--gray-color);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.video-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.video-player-wrapper {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    background: #000;
+    margin-bottom: 2rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.video-player-wrapper:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
+}
+
+.video-player {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 20px;
+    outline: none;
+    background: #000;
+}
+
+.video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none; /* Siempre none para no bloquear controles */
+    z-index: 1;
+}
+
+.video-player-wrapper.paused .video-overlay {
+    opacity: 1;
+}
+
+/* Asegurar que los controles del video estén siempre accesibles */
+.video-player {
+    position: relative;
+    z-index: 2;
+}
+
+.video-player::-webkit-media-controls-panel {
+    z-index: 3;
+}
+
+/* El overlay siempre tiene pointer-events: none para no bloquear controles */
+/* Solo el botón de play tiene pointer-events cuando está pausado */
+.video-player-wrapper.paused .video-play-btn {
+    pointer-events: auto;
+}
+
+.video-play-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 107, 53, 0.95);
+    border: 4px solid white;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);
+    z-index: 2;
+    pointer-events: auto;
+}
+
+.video-play-btn:hover {
+    background: var(--primary-color);
+    transform: scale(1.1);
+    box-shadow: 0 15px 40px rgba(255, 107, 53, 0.6);
+}
+
+.video-play-btn:active {
+    transform: scale(0.95);
+}
+
+.video-info {
+    text-align: center;
+}
+
+.video-features {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    flex-wrap: wrap;
+    padding: 2rem;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.video-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.1rem;
+    color: var(--dark-color);
+    font-weight: 500;
+}
+
+.video-feature-item i {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .video-section {
+        padding: 3rem 0;
+    }
+    
+    .video-title {
+        font-size: 2rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .video-title i {
+        font-size: 2rem;
+    }
+    
+    .video-subtitle {
+        font-size: 1rem;
+        padding: 0 1rem;
+    }
+    
+    .video-player-wrapper {
+        border-radius: 15px;
+        margin: 0 1rem 2rem 1rem;
+    }
+    
+    .video-player {
+        border-radius: 15px;
+    }
+    
+    .video-overlay {
+        border-radius: 15px;
+    }
+    
+    .video-play-btn {
+        width: 70px;
+        height: 70px;
+        font-size: 1.8rem;
+    }
+    
+    .video-features {
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        margin: 0 1rem;
+    }
+    
+    .video-feature-item {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .video-title {
+        font-size: 1.75rem;
+    }
+    
+    .video-subtitle {
+        font-size: 0.95rem;
+    }
+    
+    .video-play-btn {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+}
 </style>
+
+<script>
+// Control del video
+document.addEventListener('DOMContentLoaded', function() {
+    const video = document.getElementById('homeVideo');
+    const playBtn = document.getElementById('videoPlayBtn');
+    const wrapper = document.querySelector('.video-player-wrapper');
+    
+    if (video && playBtn && wrapper) {
+        // Inicializar estado
+        if (video.paused) {
+            wrapper.classList.add('paused');
+        } else {
+            wrapper.classList.remove('paused');
+        }
+        
+        // Mostrar overlay cuando el video está pausado
+        video.addEventListener('play', function() {
+            wrapper.classList.remove('paused');
+        });
+        
+        video.addEventListener('pause', function() {
+            wrapper.classList.add('paused');
+        });
+        
+        // Control del botón de play personalizado
+        playBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Evitar que el click llegue al video
+            if (video.paused) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        });
+        
+        // Actualizar icono del botón según el estado
+        video.addEventListener('play', function() {
+            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        });
+        
+        video.addEventListener('pause', function() {
+            playBtn.innerHTML = '<i class="fas fa-play"></i>';
+        });
+        
+        // Asegurar que los controles nativos siempre funcionen
+        video.addEventListener('loadedmetadata', function() {
+            // Forzar que los controles sean visibles
+            video.controls = true;
+        });
+    }
+});
+</script>
 
 <!-- Chatbot Script -->
 <script src="<?php echo asset('js/chatbot.js'); ?>"></script>
