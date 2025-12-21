@@ -129,8 +129,8 @@ class ClienteController extends Controller {
         // Obtener calificaciones hechas por el cliente
         $calificaciones = $calificacionModel->getByCliente($_SESSION['usuario_id']);
         
-        // Obtener lista de maestros para el selector (solo validados)
-        $maestros = $maestroModel->search();
+        // Obtener lista de maestros validados (sin restricción de pago para calificaciones)
+        $maestros = $maestroModel->getAllValidados();
 
         $data = [
             'calificaciones' => $calificaciones,

@@ -33,6 +33,7 @@ $title = 'Gestionar Maestros';
                                 <th>DNI</th>
                                 <th>Especialidades</th>
                                 <th>Documentos</th>
+                                <th>Pago Realizado</th>
                                 <th style="text-align: center;">Acciones</th>
                             </tr>
                         </thead>
@@ -60,6 +61,55 @@ $title = 'Gestionar Maestros';
                                     ?>
                                 </td>
                                 <td>
+                                    <?php if (!empty($maestro['pago'])): 
+                                        // Verificar si el pago está caducado
+                                        $pago_caducado = false;
+                                        $estado_display = $maestro['pago']['estado'];
+                                        
+                                        if (!empty($maestro['pago']['fecha_expiracion']) && $maestro['pago']['estado'] === 'verificado') {
+                                            $fecha_expiracion = new DateTime($maestro['pago']['fecha_expiracion']);
+                                            $fecha_actual = new DateTime();
+                                            if ($fecha_expiracion < $fecha_actual) {
+                                                $pago_caducado = true;
+                                                $estado_display = 'caducado';
+                                            }
+                                        }
+                                        
+                                        // Determinar el color del badge según el estado
+                                        $badge_class = 'badge-secondary';
+                                        if ($pago_caducado) {
+                                            $badge_class = 'badge-expired';
+                                        } elseif ($maestro['pago']['estado'] === 'verificado') {
+                                            $badge_class = 'badge-success';
+                                        } elseif ($maestro['pago']['estado'] === 'rechazado') {
+                                            $badge_class = 'badge-danger';
+                                        } else {
+                                            $badge_class = 'badge-warning';
+                                        }
+                                    ?>
+                                        <span class="badge <?php echo $badge_class; ?>" data-estado="<?php echo htmlspecialchars($maestro['pago']['estado']); ?>" data-expiracion="<?php echo !empty($maestro['pago']['fecha_expiracion']) ? htmlspecialchars($maestro['pago']['fecha_expiracion']) : ''; ?>">
+                                            <?php echo ucfirst($estado_display); ?>
+                                        </span>
+                                        <br>
+                                        <small class="text-muted">
+                                            S/ <?php echo number_format($maestro['pago']['monto'], 2); ?>
+                                        </small>
+                                        <?php if ($pago_caducado && !empty($maestro['pago']['fecha_expiracion'])): ?>
+                                        <br>
+                                        <small class="text-danger" style="font-size: 0.75rem;">
+                                            <i class="fas fa-clock"></i> Expiró: <?php echo date('d/m/Y H:i', strtotime($maestro['pago']['fecha_expiracion'])); ?>
+                                        </small>
+                                        <?php elseif (!empty($maestro['pago']['fecha_expiracion']) && $maestro['pago']['estado'] === 'verificado'): ?>
+                                        <br>
+                                        <small class="text-muted" style="font-size: 0.75rem;">
+                                            <i class="fas fa-clock"></i> Expira: <?php echo date('d/m/Y H:i', strtotime($maestro['pago']['fecha_expiracion'])); ?>
+                                        </small>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <span class="badge badge-secondary">Sin pago</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
                                     <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
                                         <?php if ($estado === 'pendiente'): ?>
                                         <button class="btn btn-sm btn-success" onclick="validarPerfil(<?php echo $maestro['id']; ?>)">
@@ -67,6 +117,11 @@ $title = 'Gestionar Maestros';
                                         </button>
                                         <button class="btn btn-sm btn-danger" onclick="rechazarPerfil(<?php echo $maestro['id']; ?>)">
                                             <i class="fas fa-times"></i> Rechazar
+                                        </button>
+                                        <?php endif; ?>
+                                        <?php if (!empty($maestro['pago'])): ?>
+                                        <button class="btn btn-sm btn-purple" onclick="verPago(<?php echo $maestro['id']; ?>)">
+                                            <i class="fas fa-money-bill-wave"></i> Pagos
                                         </button>
                                         <?php endif; ?>
                                         <button class="btn btn-sm btn-outline" onclick="verDetalleMaestro(<?php echo $maestro['id']; ?>)">
@@ -86,12 +141,42 @@ $title = 'Gestionar Maestros';
     </div>
 </div>
 
+<!-- Modal de confirmación para validar perfil -->
+<div id="validarConfirmModal" class="modal" style="display: none;" onclick="if(event.target === this) closeValidarConfirmModal()">
+    <div class="modal-dialog modal-confirm" onclick="event.stopPropagation()">
+        <div class="modal-content">
+            <div class="modal-header confirm-header-success">
+                <span class="modal-close" onclick="closeValidarConfirmModal()">&times;</span>
+                <div class="confirm-icon-wrapper">
+                    <i class="fas fa-check-circle confirm-icon"></i>
+                </div>
+                <h3>¿Validar este perfil?</h3>
+            </div>
+            <div class="modal-body confirm-body">
+                <p class="confirm-message">
+                    ¿Estás seguro de que deseas <strong>validar este perfil</strong>?<br>
+                    El maestro podrá aparecer en las búsquedas de los clientes.
+                </p>
+            </div>
+            <div class="modal-footer confirm-footer">
+                <button type="button" class="btn btn-outline-cancel" onclick="closeValidarConfirmModal()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-confirm-success" onclick="confirmarValidacion()">
+                    <i class="fas fa-check"></i> Sí, Validar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal para rechazar perfil -->
 <div id="rechazarModal" class="modal" style="display: none;">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Rechazar Perfil</h3>
+                <span class="modal-close" onclick="closeRechazarModal()">&times;</span>
             </div>
             <form method="POST" action="<?php echo BASE_URL; ?>admin/validar-perfil">
                 <input type="hidden" name="maestro_id" id="maestro_id_rechazar">
@@ -111,12 +196,73 @@ $title = 'Gestionar Maestros';
     </div>
 </div>
 
+<!-- Modal para ver comprobante de pago -->
+<div id="pagoModal" class="modal" style="display: none;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-money-bill-wave"></i> Comprobante de Pago</h3>
+                <span class="modal-close" onclick="closePagoModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="loadingPago" class="text-center py-5">
+                    <i class="fas fa-spinner fa-spin fa-3x" style="color: var(--primary-color);"></i>
+                    <p class="mt-2">Cargando información del pago...</p>
+                </div>
+                
+                <div id="contentPago" style="display: none;">
+                    <div class="pago-info-section mb-4">
+                        <h4 class="section-title-pago"><i class="fas fa-info-circle"></i> Información del Pago</h4>
+                        <div class="info-grid-pago">
+                            <div>
+                                <strong>Estado:</strong>
+                                <span id="pago_estado" class="badge-pago"></span>
+                            </div>
+                            <div>
+                                <strong>Monto:</strong>
+                                <span id="pago_monto" class="text-success font-weight-bold"></span>
+                            </div>
+                            <div>
+                                <strong>Método de Pago:</strong>
+                                <span id="pago_metodo"></span>
+                            </div>
+                            <div>
+                                <strong>Número de Comprobante:</strong>
+                                <span id="pago_comprobante"></span>
+                            </div>
+                            <div>
+                                <strong>Fecha de Pago:</strong>
+                                <span id="pago_fecha"></span>
+                            </div>
+                            <div>
+                                <strong>Fecha de Expiración:</strong>
+                                <span id="pago_expiracion"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="comprobante-section">
+                        <h4 class="section-title-pago"><i class="fas fa-receipt"></i> Comprobante</h4>
+                        <div class="comprobante-container">
+                            <img id="pago_imagen" src="" alt="Comprobante de Pago" class="comprobante-image">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closePagoModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal para ver detalles del maestro -->
 <div id="detalleMaestroModal" class="modal" style="display: none;">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Detalle del Maestro</h3>
+                <span class="modal-close" onclick="closeDetalleModal()">&times;</span>
             </div>
             <div class="modal-body">
                 <div id="loadingDetalle" class="text-center py-5">
@@ -155,27 +301,49 @@ $title = 'Gestionar Maestros';
 </div>
 
 <script>
+let maestroIdToValidate = null;
+
 function validarPerfil(id) {
-    if (confirm('¿Estás seguro de validar este perfil?')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '<?php echo BASE_URL; ?>admin/validar-perfil';
-        
-        const inputId = document.createElement('input');
-        inputId.type = 'hidden';
-        inputId.name = 'maestro_id';
-        inputId.value = id;
-        
-        const inputAccion = document.createElement('input');
-        inputAccion.type = 'hidden';
-        inputAccion.name = 'accion';
-        inputAccion.value = 'validar';
-        
-        form.appendChild(inputId);
-        form.appendChild(inputAccion);
-        document.body.appendChild(form);
-        form.submit();
+    maestroIdToValidate = id;
+    document.getElementById('validarConfirmModal').style.display = 'flex';
+}
+
+function closeValidarConfirmModal() {
+    document.getElementById('validarConfirmModal').style.display = 'none';
+    maestroIdToValidate = null;
+}
+
+// Cerrar modal con tecla ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('validarConfirmModal');
+        if (modal && modal.style.display === 'flex') {
+            closeValidarConfirmModal();
+        }
     }
+});
+
+function confirmarValidacion() {
+    if (!maestroIdToValidate) return;
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '<?php echo BASE_URL; ?>admin/validar-perfil';
+    
+    const inputId = document.createElement('input');
+    inputId.type = 'hidden';
+    inputId.name = 'maestro_id';
+    inputId.value = maestroIdToValidate;
+    
+    const inputAccion = document.createElement('input');
+    inputAccion.type = 'hidden';
+    inputAccion.name = 'accion';
+    inputAccion.value = 'validar';
+    
+    form.appendChild(inputId);
+    form.appendChild(inputAccion);
+    document.body.appendChild(form);
+    form.submit();
 }
 
 function rechazarPerfil(id) {
@@ -289,6 +457,150 @@ function verDetalleMaestro(id) {
 function closeDetalleModal() {
     document.getElementById('detalleMaestroModal').style.display = 'none';
 }
+
+function verPago(maestroId) {
+    const modal = document.getElementById('pagoModal');
+    const loading = document.getElementById('loadingPago');
+    const content = document.getElementById('contentPago');
+    
+    modal.style.display = 'flex';
+    loading.style.display = 'block';
+    content.style.display = 'none';
+
+    // Fetch pago details
+    fetch('<?php echo BASE_URL; ?>admin/get-maestro-pago?id=' + maestroId)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                closePagoModal();
+                return;
+            }
+
+            const pago = data.pago;
+            
+            // Populate pago info
+            // Verificar si el pago está caducado
+            let estadoDisplay = pago.estado;
+            let esCaducado = false;
+            
+            if (pago.estado === 'verificado' && pago.fecha_expiracion) {
+                const fechaExpiracion = new Date(pago.fecha_expiracion);
+                const fechaActual = new Date();
+                if (fechaExpiracion < fechaActual) {
+                    esCaducado = true;
+                    estadoDisplay = 'caducado';
+                }
+            }
+            
+            const estadoBadge = document.getElementById('pago_estado');
+            estadoBadge.textContent = estadoDisplay.charAt(0).toUpperCase() + estadoDisplay.slice(1);
+            
+            // Determinar la clase del badge
+            let badgeClass = 'badge-pago badge-warning';
+            if (esCaducado) {
+                badgeClass = 'badge-pago badge-expired';
+            } else if (pago.estado === 'verificado') {
+                badgeClass = 'badge-pago badge-success';
+            } else if (pago.estado === 'rechazado') {
+                badgeClass = 'badge-pago badge-danger';
+            }
+            
+            estadoBadge.className = badgeClass;
+            
+            document.getElementById('pago_monto').textContent = 'S/ ' + parseFloat(pago.monto).toFixed(2);
+            document.getElementById('pago_metodo').textContent = pago.metodo_pago ? pago.metodo_pago.charAt(0).toUpperCase() + pago.metodo_pago.slice(1) : 'N/A';
+            document.getElementById('pago_comprobante').textContent = pago.numero_comprobante || 'N/A';
+            document.getElementById('pago_fecha').textContent = pago.fecha_pago ? new Date(pago.fecha_pago).toLocaleString('es-PE') : 'N/A';
+            
+            // Mostrar fecha de expiración con indicador si está caducado
+            const fechaExpiracionElement = document.getElementById('pago_expiracion');
+            if (pago.fecha_expiracion) {
+                const fechaExpiracion = new Date(pago.fecha_expiracion);
+                const fechaActual = new Date();
+                const fechaFormateada = fechaExpiracion.toLocaleString('es-PE');
+                
+                if (esCaducado) {
+                    fechaExpiracionElement.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> ' + fechaFormateada + ' (Caducado)</span>';
+                } else {
+                    fechaExpiracionElement.textContent = fechaFormateada;
+                }
+            } else {
+                fechaExpiracionElement.textContent = 'N/A';
+            }
+
+            // Comprobante imagen
+            const imgElement = document.getElementById('pago_imagen');
+            if (pago.comprobante_imagen) {
+                imgElement.src = '<?php echo UPLOAD_URL; ?>' + pago.comprobante_imagen;
+                imgElement.style.display = 'block';
+            } else {
+                imgElement.style.display = 'none';
+            }
+
+            // Show content
+            loading.style.display = 'none';
+            content.style.display = 'block';
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Error al cargar la información del pago');
+            closePagoModal();
+        });
+}
+
+function closePagoModal() {
+    document.getElementById('pagoModal').style.display = 'none';
+}
+
+// Actualización en tiempo real del estado de pagos caducados
+function actualizarEstadosPagos() {
+    const badges = document.querySelectorAll('[data-estado="verificado"][data-expiracion]');
+    const ahora = new Date();
+    
+    badges.forEach(badge => {
+        const fechaExpiracionStr = badge.getAttribute('data-expiracion');
+        if (!fechaExpiracionStr) return;
+        
+        const fechaExpiracion = new Date(fechaExpiracionStr);
+        
+        if (fechaExpiracion < ahora) {
+            // El pago ha caducado
+            badge.textContent = 'Caducado';
+            badge.className = 'badge badge-expired';
+            
+            // Actualizar también la fecha de expiración si existe un elemento pequeño cerca
+            const smallElement = badge.parentElement.querySelector('small.text-muted');
+            if (smallElement && smallElement.textContent.includes('Expira:')) {
+                smallElement.className = 'text-danger';
+                smallElement.style.fontSize = '0.75rem';
+                smallElement.innerHTML = '<i class="fas fa-clock"></i> Expiró: ' + 
+                    fechaExpiracion.toLocaleDateString('es-PE', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+            }
+        }
+    });
+}
+
+// Ejecutar actualización cada minuto
+setInterval(actualizarEstadosPagos, 60000);
+
+// Ejecutar inmediatamente al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    actualizarEstadosPagos();
+});
+
+// Actualizar también cuando se vuelve a la pestaña del navegador
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        actualizarEstadosPagos();
+    }
+});
 </script>
 
 <style>
@@ -307,6 +619,40 @@ function closeDetalleModal() {
 .table th {
     background: var(--light-color);
     font-weight: 600;
+}
+
+/* Badges básicos */
+.badge {
+    display: inline-block;
+    padding: 0.35em 0.65em;
+    font-size: 0.875em;
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.badge-success {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.badge-danger {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.badge-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+    color: #fff;
 }
 
 .table-responsive {
@@ -351,24 +697,192 @@ function closeDetalleModal() {
     border-bottom: none;
     display: flex;
     justify-content: center; /* Centered content */
+    align-items: center;
+    position: relative; /* Para posicionar el botón close */
 }
 
 .modal-header h3 {
     font-weight: 700;
     font-size: 1.5rem;
     letter-spacing: 0.5px;
+    margin: 0;
+}
+
+/* Modal de Confirmación de Validación */
+.modal-confirm {
+    max-width: 450px;
+}
+
+.confirm-header-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    text-align: center;
+    padding: 2.5rem 2rem 2rem;
+    border-bottom: none;
+    position: relative;
+}
+
+.confirm-header-success .modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.confirm-header-success .modal-close:hover {
+    background: rgba(255, 255, 255, 0.95);
+    color: #28a745;
+}
+
+.confirm-icon-wrapper {
+    margin-bottom: 1rem;
+}
+
+.confirm-icon {
+    font-size: 4rem;
+    color: white;
+    animation: scaleIn 0.3s ease-out;
+}
+
+@keyframes scaleIn {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.confirm-header-success h3 {
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.confirm-body {
+    padding: 2rem;
+    text-align: center;
+}
+
+.confirm-message {
+    font-size: 1.1rem;
+    color: #495057;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.confirm-message strong {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.confirm-footer {
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+
+.btn-confirm-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(40, 167, 69, 0.25);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-confirm-success:hover {
+    background: linear-gradient(135deg, #218838 0%, #1da88a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(40, 167, 69, 0.35);
+}
+
+.btn-confirm-success:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.25);
+}
+
+.btn-outline-cancel {
+    background: white;
+    color: #6c757d;
+    border: 2px solid #dee2e6;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-outline-cancel:hover {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+    color: #495057;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-outline-cancel:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .modal-close {
-    color: rgba(255,255,255,0.8);
-    transition: color 0.2s;
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 300;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.3s ease;
     text-shadow: none;
     opacity: 1;
+    z-index: 10;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .modal-close:hover {
-    color: white;
-    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--primary-color);
+    border-color: rgba(255, 255, 255, 0.9);
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.modal-close:active {
+    transform: scale(0.95) rotate(90deg);
+    background: rgba(255, 255, 255, 1);
 }
 
 .modal-body {
@@ -498,6 +1012,146 @@ function closeDetalleModal() {
 #rechazarModal .form-control {
     width: 100%;
     text-align: left; /* Keep textarea text left-aligned for readability */
+}
+
+/* Pago Modal Styles */
+.btn-purple {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-purple:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #653a8f 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.section-title-pago {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    border-bottom: 2px solid rgba(0,0,0,0.05);
+    padding-bottom: 0.8rem;
+}
+
+.section-title-pago i {
+    background: rgba(102, 126, 234, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    color: #667eea;
+}
+
+.pago-info-section {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+}
+
+.info-grid-pago {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.info-grid-pago div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.info-grid-pago strong {
+    color: #495057;
+    font-weight: 600;
+}
+
+.badge-pago {
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-pago.badge-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-pago.badge-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.badge-pago.badge-danger {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.badge-pago.badge-expired,
+.badge.badge-expired {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: pulse-expired 2s ease-in-out infinite;
+}
+
+@keyframes pulse-expired {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(108, 117, 125, 0.7);
+    }
+    50% {
+        opacity: 0.9;
+        box-shadow: 0 0 0 4px rgba(108, 117, 125, 0);
+    }
+}
+
+.comprobante-section {
+    margin-top: 2rem;
+}
+
+.comprobante-container {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+.comprobante-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.comprobante-image:hover {
+    transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+    .info-grid-pago {
+        grid-template-columns: 1fr;
+    }
 }
 
 </style>

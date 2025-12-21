@@ -95,5 +95,35 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleMaestroFields(false);
         }
     });
+    
+    // Preview de imagen de perfil
+    const fotoPerfil = document.getElementById('foto_perfil');
+    const fotoPreview = document.getElementById('fotoPreview');
+    const fotoPreviewContainer = document.getElementById('fotoPreviewContainer');
+    
+    if (fotoPerfil) {
+        fotoPerfil.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    fotoPreview.src = e.target.result;
+                    fotoPreviewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 });
+
+// Función para remover preview de imagen
+function removeImagePreview() {
+    const fotoPerfil = document.getElementById('foto_perfil');
+    const fotoPreview = document.getElementById('fotoPreview');
+    const fotoPreviewContainer = document.getElementById('fotoPreviewContainer');
+    
+    if (fotoPerfil) fotoPerfil.value = '';
+    if (fotoPreview) fotoPreview.src = '';
+    if (fotoPreviewContainer) fotoPreviewContainer.style.display = 'none';
+}
 

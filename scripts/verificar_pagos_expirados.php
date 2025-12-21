@@ -11,6 +11,10 @@ require_once __DIR__ . '/../models/PagoMaestro.php';
 require_once __DIR__ . '/../models/Notificacion.php';
 
 try {
+    // Inicializar conexión a la base de datos
+    $database = new Database();
+    $db = $database->getConnection();
+    
     $pagoModel = new PagoMaestro($db);
     $notificacionModel = new Notificacion($db);
     

@@ -46,7 +46,28 @@ $title = 'Portafolio';
     <?php endif; ?>
 </div>
 
+<?php if (isset($pago_expirado) && $pago_expirado): ?>
+    <?php include 'modal_pago_expirado.php'; ?>
+<?php endif; ?>
+
 <style>
 .portfolio-grid { display:flex; gap:1rem; flex-wrap:wrap; }
 .portfolio-item { text-align:center; }
 </style>
+
+<script>
+<?php if (isset($pago_expirado) && $pago_expirado): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    const modalExpirado = document.getElementById('modalPagoExpirado');
+    if (modalExpirado) {
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+    }
+});
+<?php endif; ?>
+</script>

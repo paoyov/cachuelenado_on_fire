@@ -45,6 +45,7 @@ $router->addRoute('maestro/configuracion', 'MaestroController', 'configuracion')
 
 // Rutas de administrador
 $router->addRoute('admin/dashboard', 'AdminController', 'dashboard');
+$router->addRoute('admin/perfil', 'AdminController', 'perfil');
 $router->addRoute('admin/maestros', 'AdminController', 'maestros');
 $router->addRoute('admin/validar-perfil', 'AdminController', 'validarPerfil');
 $router->addRoute('admin/estadisticas', 'AdminController', 'estadisticas');
@@ -52,6 +53,7 @@ $router->addRoute('admin/usuarios', 'AdminController', 'usuarios');
 $router->addRoute('admin/reportes', 'AdminController', 'reportes');
 $router->addRoute('admin/reportes-mensuales', 'AdminController', 'reportesMensuales');
 $router->addRoute('admin/get-maestro-details', 'AdminController', 'getMaestroDetails');
+$router->addRoute('admin/get-maestro-pago', 'AdminController', 'getMaestroPago');
 $router->addRoute('admin/pagos', 'AdminController', 'pagos');
 
 // Rutas de pago

@@ -26,3 +26,24 @@ $title = 'Disponibilidad';
         </div>
     </form>
 </div>
+
+<?php if (isset($pago_expirado) && $pago_expirado): ?>
+    <?php include 'modal_pago_expirado.php'; ?>
+<?php endif; ?>
+
+<script>
+<?php if (isset($pago_expirado) && $pago_expirado): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    const modalExpirado = document.getElementById('modalPagoExpirado');
+    if (modalExpirado) {
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+    }
+});
+<?php endif; ?>
+</script>

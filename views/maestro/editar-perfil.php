@@ -87,6 +87,27 @@ $title = 'Editar Perfil';
     </form>
 </div>
 
+<?php if (isset($pago_expirado) && $pago_expirado): ?>
+    <?php include 'modal_pago_expirado.php'; ?>
+<?php endif; ?>
+
 <style>
 .form-check-group { display:grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap:0.5rem; }
 </style>
+
+<script>
+<?php if (isset($pago_expirado) && $pago_expirado): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    const modalExpirado = document.getElementById('modalPagoExpirado');
+    if (modalExpirado) {
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+    }
+});
+<?php endif; ?>
+</script>

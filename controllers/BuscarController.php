@@ -55,7 +55,8 @@ class BuscarController extends Controller {
             'resultados' => $resultados,
             'especialidades' => $especialidadModel->getAll(),
             'distritos' => $distritoModel->getAll(),
-            'filters' => $filters
+            'filters' => $filters,
+            'isSearch' => $isSearch
         ];
 
         $this->view('buscar/index', $data);

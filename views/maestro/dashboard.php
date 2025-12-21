@@ -49,6 +49,50 @@ $title = 'Panel del Maestro';
     </div>
     <?php endif; ?>
     
+    <?php if ($pago_activo && isset($pago_activo['fecha_expiracion']) && !$pago_expirado): ?>
+    <!-- Contador de Tiempo Restante -->
+    <div class="countdown-container">
+        <div class="countdown-card">
+            <div class="countdown-header">
+                <div class="countdown-icon-wrapper">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="countdown-header-text">
+                    <h3 class="countdown-title">Tiempo Restante de Registro</h3>
+                    <p class="countdown-subtitle">Tu perfil estará activo por</p>
+                </div>
+            </div>
+            <div class="countdown-body">
+                <div class="countdown-display" id="countdownDisplay">
+                    <div class="countdown-item">
+                        <div class="countdown-value" id="hours">00</div>
+                        <div class="countdown-label">Horas</div>
+                    </div>
+                    <div class="countdown-separator">:</div>
+                    <div class="countdown-item">
+                        <div class="countdown-value" id="minutes">00</div>
+                        <div class="countdown-label">Minutos</div>
+                    </div>
+                    <div class="countdown-separator">:</div>
+                    <div class="countdown-item">
+                        <div class="countdown-value" id="seconds">00</div>
+                        <div class="countdown-label">Segundos</div>
+                    </div>
+                </div>
+                <div class="countdown-progress">
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <p class="countdown-info">
+                        <i class="fas fa-info-circle"></i>
+                        Renueva tu pago antes de que expire para mantener tu perfil activo
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+    
     <div class="maestro-ratings-card-wrapper">
         <div class="ratings-card">
             <div class="ratings-card-header">
@@ -160,7 +204,9 @@ $title = 'Panel del Maestro';
 
 <?php include __DIR__ . '/../../views/layout/testimonials.php'; ?>
 
-<?php if ($mostrar_modal || !$pago_activo): ?>
+<?php if ($pago_expirado): ?>
+    <?php include 'modal_pago_expirado.php'; ?>
+<?php elseif ($mostrar_modal || !$pago_activo): ?>
     <?php include 'modal_pago.php'; ?>
 <?php endif; ?>
 
@@ -168,7 +214,7 @@ $title = 'Panel del Maestro';
 function abrirModalPago() {
     const modal = document.getElementById('modalPagoYape');
     if (modal) {
-        modal.style.display = 'block';
+        modal.style.display = 'flex';
     }
 }
 
@@ -178,6 +224,395 @@ document.addEventListener('DOMContentLoaded', function() {
     abrirModalPago();
 });
 <?php endif; ?>
+
+// Función para configurar el modal expirado
+function configurarModalExpirado() {
+    const modalExpirado = document.getElementById('modalPagoExpirado');
+    if (modalExpirado) {
+        // Bloquear scroll del body
+        document.body.style.overflow = 'hidden';
+        
+        // Prevenir cerrar con ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+        
+        // Prevenir cerrar haciendo clic fuera
+        modalExpirado.addEventListener('click', function(e) {
+            if (e.target === modalExpirado) {
+                e.stopPropagation();
+            }
+        });
+    }
+}
+
+// El modal de pago expirado se muestra automáticamente (ya está en display: flex en el HTML)
+<?php if ($pago_expirado): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    configurarModalExpirado();
+});
+<?php endif; ?>
+
+// Contador de tiempo restante
+<?php if ($pago_activo && isset($pago_activo['fecha_expiracion']) && !$pago_expirado): ?>
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaExpiracion = new Date('<?php echo $pago_activo['fecha_expiracion']; ?>').getTime();
+    const horasElement = document.getElementById('hours');
+    const minutosElement = document.getElementById('minutes');
+    const segundosElement = document.getElementById('seconds');
+    const progressBar = document.getElementById('progressBar');
+    
+    // Duración total en milisegundos (24 horas)
+    const duracionTotal = 24 * 60 * 60 * 1000;
+    
+    function updateCountdown() {
+        const ahora = new Date().getTime();
+        const diferencia = fechaExpiracion - ahora;
+        
+        if (diferencia > 0) {
+            // Calcular horas, minutos y segundos
+            const horas = Math.floor((diferencia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
+            const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
+            
+            // Actualizar elementos
+            horasElement.textContent = String(horas).padStart(2, '0');
+            minutosElement.textContent = String(minutos).padStart(2, '0');
+            segundosElement.textContent = String(segundos).padStart(2, '0');
+            
+            // Calcular porcentaje restante
+            const tiempoTranscurrido = duracionTotal - diferencia;
+            const porcentaje = (tiempoTranscurrido / duracionTotal) * 100;
+            progressBar.style.width = porcentaje + '%';
+            
+            // Cambiar color según tiempo restante
+            const horasRestantes = horas + (minutos / 60);
+            if (horasRestantes < 2) {
+                progressBar.className = 'progress-bar progress-bar-danger';
+                horasElement.parentElement.className = 'countdown-item countdown-item-danger';
+                minutosElement.parentElement.className = 'countdown-item countdown-item-danger';
+                segundosElement.parentElement.className = 'countdown-item countdown-item-danger';
+            } else if (horasRestantes < 6) {
+                progressBar.className = 'progress-bar progress-bar-warning';
+                horasElement.parentElement.className = 'countdown-item countdown-item-warning';
+                minutosElement.parentElement.className = 'countdown-item countdown-item-warning';
+                segundosElement.parentElement.className = 'countdown-item countdown-item-warning';
+            } else {
+                progressBar.className = 'progress-bar progress-bar-success';
+                horasElement.parentElement.className = 'countdown-item';
+                minutosElement.parentElement.className = 'countdown-item';
+                segundosElement.parentElement.className = 'countdown-item';
+            }
+        } else {
+            // Tiempo expirado
+            horasElement.textContent = '00';
+            minutosElement.textContent = '00';
+            segundosElement.textContent = '00';
+            progressBar.style.width = '100%';
+            progressBar.className = 'progress-bar progress-bar-danger';
+            
+            // Ocultar contador
+            const countdownContainer = document.querySelector('.countdown-container');
+            if (countdownContainer) {
+                countdownContainer.style.display = 'none';
+            }
+            
+            // Recargar página inmediatamente para mostrar modal de pago expirado
+            window.location.reload();
+        }
+    }
+    
+    // Actualizar cada segundo
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+});
+<?php endif; ?>
 </script>
+
+<style>
+/* ============================================
+   Contador de Tiempo Restante
+   ============================================ */
+.countdown-container {
+    margin-bottom: 2rem;
+}
+
+.countdown-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.countdown-card:hover {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.countdown-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    color: white;
+}
+
+.countdown-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    backdrop-filter: blur(10px);
+    animation: pulse-icon 2s ease infinite;
+}
+
+@keyframes pulse-icon {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.countdown-header-text {
+    flex: 1;
+}
+
+.countdown-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+}
+
+.countdown-subtitle {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.95rem;
+    opacity: 0.9;
+}
+
+.countdown-body {
+    padding: 2.5rem 2rem;
+}
+
+.countdown-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.countdown-item {
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.countdown-value {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 2px 8px rgba(255, 107, 53, 0.2);
+    transition: all 0.3s ease;
+}
+
+.countdown-item-warning .countdown-value {
+    color: var(--warning-color);
+    text-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+    animation: pulse-warning 1s ease infinite;
+}
+
+.countdown-item-danger .countdown-value {
+    color: var(--danger-color);
+    text-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+    animation: pulse-danger 0.5s ease infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes pulse-danger {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.countdown-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--gray-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.countdown-separator {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1;
+    animation: blink 1s ease infinite;
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.countdown-progress {
+    margin-top: 2rem;
+}
+
+.progress-bar-wrapper {
+    width: 100%;
+    height: 12px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border-radius: 10px;
+    transition: width 1s ease, background 0.3s ease;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+.progress-bar-success {
+    background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.progress-bar-warning {
+    background: linear-gradient(90deg, var(--warning-color) 0%, #ff9800 100%);
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+    animation: pulse-progress 1s ease infinite;
+}
+
+.progress-bar-danger {
+    background: linear-gradient(90deg, var(--danger-color) 0%, #c82333 100%);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    animation: pulse-progress-danger 0.5s ease infinite;
+}
+
+@keyframes pulse-progress {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 16px rgba(255, 193, 7, 0.5);
+    }
+}
+
+@keyframes pulse-progress-danger {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 16px rgba(220, 53, 69, 0.6);
+    }
+}
+
+.countdown-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--gray-color);
+    text-align: center;
+}
+
+.countdown-info i {
+    color: var(--primary-color);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .countdown-display {
+        gap: 1rem;
+    }
+    
+    .countdown-value {
+        font-size: 2.5rem;
+    }
+    
+    .countdown-separator {
+        font-size: 2rem;
+    }
+    
+    .countdown-header {
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .countdown-body {
+        padding: 2rem 1.5rem;
+    }
+    
+    .countdown-title {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .countdown-display {
+        gap: 0.5rem;
+    }
+    
+    .countdown-value {
+        font-size: 2rem;
+    }
+    
+    .countdown-separator {
+        font-size: 1.5rem;
+    }
+    
+    .countdown-label {
+        font-size: 0.75rem;
+    }
+    
+    .countdown-icon-wrapper {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+    
+    .countdown-header {
+        padding: 1rem;
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>
 
 

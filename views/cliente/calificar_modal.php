@@ -339,6 +339,199 @@
     border: 2px solid white;
 }
 
+/* ============================================
+   Modal de Alerta Profesional
+   ============================================ */
+
+.modal-alert {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-alert-content {
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    max-width: 450px;
+    width: 90%;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-alert-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem 1.5rem;
+    background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+}
+
+.modal-alert-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    margin: 0 auto;
+    position: relative;
+}
+
+.modal-alert-icon i {
+    font-size: 2rem;
+    color: #ffc107;
+}
+
+.modal-alert-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    font-size: 1.25rem;
+    color: #fff;
+    cursor: pointer;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.modal-alert-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
+    transform: rotate(90deg);
+}
+
+.modal-alert-body {
+    padding: 2rem 1.5rem 1.5rem;
+    text-align: center;
+    padding-top: 1.5rem;
+}
+
+.modal-alert-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0 0 1rem 0;
+}
+
+.modal-alert-message {
+    font-size: 1rem;
+    color: #6c757d;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.modal-alert-footer {
+    padding: 1rem 1.5rem 1.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.modal-alert-footer .btn {
+    min-width: 120px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.modal-alert-footer .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Variantes de color según el tipo */
+.modal-alert[data-type="warning"] .modal-alert-header {
+    background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
+}
+
+.modal-alert[data-type="warning"] .modal-alert-icon i {
+    color: #ffc107;
+}
+
+.modal-alert[data-type="error"] .modal-alert-header {
+    background: linear-gradient(135deg, #dc3545 0%, #e85d75 100%);
+}
+
+.modal-alert[data-type="error"] .modal-alert-icon i {
+    color: #dc3545;
+}
+
+.modal-alert[data-type="success"] .modal-alert-header {
+    background: linear-gradient(135deg, #28a745 0%, #48c765 100%);
+}
+
+.modal-alert[data-type="success"] .modal-alert-icon i {
+    color: #28a745;
+}
+
+.modal-alert[data-type="info"] .modal-alert-header {
+    background: linear-gradient(135deg, #17a2b8 0%, #3db8d1 100%);
+}
+
+.modal-alert[data-type="info"] .modal-alert-icon i {
+    color: #17a2b8;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .modal-alert-content {
+        width: 95%;
+        max-width: none;
+    }
+    
+    .modal-alert-body {
+        padding: 1.5rem 1rem 1rem;
+    }
+    
+    .modal-alert-title {
+        font-size: 1.25rem;
+    }
+    
+    .modal-alert-message {
+        font-size: 0.9rem;
+    }
+}
+
 /* Enhancing Success Modal typography */
 #successModal h3 {
     color: #333;
@@ -346,9 +539,20 @@
 </style>
 
 <script>
-// ... (Existing variables) ...
 // Ensure it's a valid array even if PHP returns null/false
-const maestrosData = <?php echo !empty($maestros) ? json_encode($maestros) : '[]'; ?>;
+// Check if $maestros exists, if not default to empty array
+<?php 
+if (!isset($maestros)) {
+    $maestros = [];
+}
+?>
+const maestrosData = <?php echo !empty($maestros) ? json_encode($maestros, JSON_UNESCAPED_UNICODE) : '[]'; ?>;
+console.log('Maestros cargados para calificar:', maestrosData.length);
+if (maestrosData.length > 0) {
+    console.log('Datos de maestros:', maestrosData);
+} else {
+    console.warn('No se encontraron maestros. Verifica que existan maestros con estado_perfil="validado" en la tabla maestros.');
+}
 
 // ... (Existing functions: updateMaestroInfo, updateStars) ...
 function updateMaestroInfo(select) {
@@ -407,12 +611,80 @@ function openSuccessModal() {
     successModal.style.display = 'flex'; 
 }
 
+// Función para mostrar alerta profesional (si no está definida globalmente)
+if (typeof showInfoAlert === 'undefined') {
+    window.showInfoAlert = function(message, type = 'info') {
+        // Crear modal si no existe
+        let modal = document.getElementById('infoAlertModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'infoAlertModal';
+            modal.className = 'modal-alert';
+            modal.style.display = 'none';
+            modal.onclick = function(e) {
+                if (e.target === this) window.closeInfoAlertModal();
+            };
+            modal.innerHTML = `
+                <div class="modal-alert-content" onclick="event.stopPropagation()">
+                    <div class="modal-alert-header">
+                        <button type="button" class="modal-alert-close" onclick="window.closeInfoAlertModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <div class="modal-alert-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                    </div>
+                    <div class="modal-alert-body">
+                        <h3 class="modal-alert-title">Información</h3>
+                        <p class="modal-alert-message" id="infoAlertMessage"></p>
+                    </div>
+                    <div class="modal-alert-footer">
+                        <button type="button" class="btn btn-primary" onclick="window.closeInfoAlertModal()">
+                            <i class="fas fa-check"></i> Entendido
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        const messageEl = document.getElementById('infoAlertMessage');
+        const iconEl = modal.querySelector('.modal-alert-icon i');
+        const titleEl = modal.querySelector('.modal-alert-title');
+        
+        if (!messageEl) return;
+        
+        const config = {
+            'info': { icon: 'fa-info-circle', title: 'Información', color: '#17a2b8' },
+            'warning': { icon: 'fa-exclamation-triangle', title: 'Advertencia', color: '#ffc107' },
+            'error': { icon: 'fa-times-circle', title: 'Error', color: '#dc3545' },
+            'success': { icon: 'fa-check-circle', title: 'Éxito', color: '#28a745' }
+        };
+        
+        const alertConfig = config[type] || config['info'];
+        
+        iconEl.className = 'fas ' + alertConfig.icon;
+        iconEl.style.color = alertConfig.color;
+        titleEl.textContent = alertConfig.title;
+        messageEl.textContent = message;
+        
+        modal.style.display = 'flex';
+    };
+    
+    window.closeInfoAlertModal = function() {
+        const modal = document.getElementById('infoAlertModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    };
+}
+
 document.getElementById('ratingForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
     // Validate that a maestro is selected
     if (!document.getElementById('rating-maestro-id').value) {
-        alert('Por favor, selecciona un maestro.');
+        showInfoAlert('Por favor, selecciona un maestro antes de enviar la calificación.', 'warning');
         return;
     }
     
@@ -428,12 +700,12 @@ document.getElementById('ratingForm').addEventListener('submit', function(e) {
             // Replace alert with custom modal
             openSuccessModal();
         } else {
-            alert('Error: ' + (data.message || 'No se pudo guardar la calificación'));
+            showInfoAlert('Error: ' + (data.message || 'No se pudo guardar la calificación'), 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Ocurrió un error al enviar la calificación');
+        showInfoAlert('Ocurrió un error al enviar la calificación. Por favor, intenta nuevamente.', 'error');
     });
 });
 </script>

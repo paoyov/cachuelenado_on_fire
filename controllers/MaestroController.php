@@ -13,6 +13,36 @@ class MaestroController extends Controller {
         $this->usuarioModel = new Usuario($this->db);
     }
 
+    /**
+     * Verificar si el pago del maestro está expirado
+     * @return array ['expirado' => bool, 'pago_activo' => array|null]
+     */
+    private function verificarPagoExpirado($maestro_id) {
+        require_once 'models/PagoMaestro.php';
+        $pagoModel = new PagoMaestro($this->db);
+        $pago_activo = $pagoModel->getPagoActivo($maestro_id);
+        
+        $pago_expirado = false;
+        if (!$pago_activo) {
+            // Verificar si hay un pago pero está expirado
+            $pago_reciente = $pagoModel->getPagoParaValidar($maestro_id);
+            if ($pago_reciente && isset($pago_reciente['fecha_expiracion'])) {
+                $fecha_expiracion = strtotime($pago_reciente['fecha_expiracion']);
+                $pago_expirado = $fecha_expiracion < time();
+            } else {
+                $pago_expirado = true; // No hay pago activo
+            }
+        } elseif (isset($pago_activo['fecha_expiracion'])) {
+            $fecha_expiracion = strtotime($pago_activo['fecha_expiracion']);
+            $pago_expirado = $fecha_expiracion < time();
+        }
+        
+        return [
+            'expirado' => $pago_expirado,
+            'pago_activo' => $pago_activo
+        ];
+    }
+
     public function dashboard() {
         $this->requireAuth(['maestro']);
         
@@ -25,10 +55,16 @@ class MaestroController extends Controller {
         $notificacionModel = new Notificacion($this->db);
         
         // Verificar estado de pago
-        require_once 'models/PagoMaestro.php';
-        $pagoModel = new PagoMaestro($this->db);
-        $pago_activo = $pagoModel->getPagoActivo($maestro['id']);
+        $pagoInfo = $this->verificarPagoExpirado($maestro['id']);
+        $pago_activo = $pagoInfo['pago_activo'];
+        $pago_expirado = $pagoInfo['expirado'];
         $mostrar_modal = isset($_SESSION['mostrar_modal_pago']) && $_SESSION['mostrar_modal_pago'];
+
+        // Calcular tiempo restante del pago
+        $fecha_expiracion = null;
+        if ($pago_activo && isset($pago_activo['fecha_expiracion'])) {
+            $fecha_expiracion = $pago_activo['fecha_expiracion'];
+        }
 
         $data = [
             'maestro' => $maestro,
@@ -36,7 +72,9 @@ class MaestroController extends Controller {
             'notificaciones' => $notificacionModel->getByUsuario($_SESSION['usuario_id'], 5, true),
             'calificaciones_globales' => $calificacionModel->getRecent(6),
             'pago_activo' => $pago_activo,
-            'mostrar_modal_pago' => $mostrar_modal
+            'mostrar_modal_pago' => $mostrar_modal,
+            'pago_expirado' => $pago_expirado,
+            'fecha_expiracion' => $fecha_expiracion
         ];
 
         $this->view('maestro/dashboard', $data);
@@ -127,6 +165,10 @@ class MaestroController extends Controller {
             }
         }
 
+        // Verificar estado de pago
+        $pagoInfo = $this->verificarPagoExpirado($maestro['id']);
+        $pago_expirado = $pagoInfo['expirado'];
+
         $especialidadModel = new Especialidad($this->db);
         $distritoModel = new Distrito($this->db);
 
@@ -135,7 +177,8 @@ class MaestroController extends Controller {
             'especialidades' => $especialidadModel->getAll(),
             'distritos' => $distritoModel->getAll(),
             'maestro_especialidades' => $this->maestroModel->getEspecialidades($maestro['id']),
-            'maestro_distritos' => $this->maestroModel->getDistritos($maestro['id'])
+            'maestro_distritos' => $this->maestroModel->getDistritos($maestro['id']),
+            'pago_expirado' => $pago_expirado
         ];
 
         $this->view('maestro/editar-perfil', $data);
@@ -185,9 +228,14 @@ class MaestroController extends Controller {
             }
         }
 
+        // Verificar estado de pago
+        $pagoInfo = $this->verificarPagoExpirado($maestro['id']);
+        $pago_expirado = $pagoInfo['expirado'];
+
         $data = [
             'maestro' => $maestro,
-            'portafolio' => $portafolioModel->getByMaestro($maestro['id'])
+            'portafolio' => $portafolioModel->getByMaestro($maestro['id']),
+            'pago_expirado' => $pago_expirado
         ];
 
         $this->view('maestro/portafolio', $data);
@@ -214,7 +262,14 @@ class MaestroController extends Controller {
             redirect('maestro/disponibilidad');
         }
 
-        $data = ['maestro' => $maestro];
+        // Verificar estado de pago
+        $pagoInfo = $this->verificarPagoExpirado($maestro['id']);
+        $pago_expirado = $pagoInfo['expirado'];
+
+        $data = [
+            'maestro' => $maestro,
+            'pago_expirado' => $pago_expirado
+        ];
         $this->view('maestro/disponibilidad', $data);
     }
 
@@ -228,9 +283,14 @@ class MaestroController extends Controller {
 
         $calificacionModel = new Calificacion($this->db);
 
+        // Verificar estado de pago
+        $pagoInfo = $this->verificarPagoExpirado($maestro['id']);
+        $pago_expirado = $pagoInfo['expirado'];
+
         $data = [
             'maestro' => $maestro,
-            'calificaciones' => $calificacionModel->getByMaestro($maestro['id'])
+            'calificaciones' => $calificacionModel->getByMaestro($maestro['id']),
+            'pago_expirado' => $pago_expirado
         ];
 
         $this->view('maestro/calificaciones', $data);
@@ -244,7 +304,14 @@ class MaestroController extends Controller {
             redirect('register');
         }
 
-        $data = ['maestro' => $maestro];
+        // Verificar estado de pago
+        $pagoInfo = $this->verificarPagoExpirado($maestro['id']);
+        $pago_expirado = $pagoInfo['expirado'];
+
+        $data = [
+            'maestro' => $maestro,
+            'pago_expirado' => $pago_expirado
+        ];
         $this->view('maestro/historial', $data);
     }
 
@@ -267,7 +334,14 @@ class MaestroController extends Controller {
             redirect('maestro/configuracion');
         }
 
-        $data = ['maestro' => $maestro];
+        // Verificar estado de pago
+        $pagoInfo = $this->verificarPagoExpirado($maestro['id']);
+        $pago_expirado = $pagoInfo['expirado'];
+
+        $data = [
+            'maestro' => $maestro,
+            'pago_expirado' => $pago_expirado
+        ];
         $this->view('maestro/configuracion', $data);
     }
 }

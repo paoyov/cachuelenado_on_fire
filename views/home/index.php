@@ -130,15 +130,28 @@ $title = 'Inicio';
                             </div>
                         </div>
                         <div class="testimonial-body">
-                            <p>"<?php echo htmlspecialchars($cal['comentario']); ?>"</p>
+                            <?php if (!empty($cal['comentario'])): ?>
+                                <p>"<?php echo htmlspecialchars($cal['comentario'], ENT_QUOTES, 'UTF-8'); ?>"</p>
+                            <?php else: ?>
+                                <p class="text-muted" style="font-style: italic;">Calificación sin comentario</p>
+                            <?php endif; ?>
                         </div>
                         <div class="testimonial-footer">
                             <span class="date">
                                 <i class="far fa-calendar-alt"></i> <?php echo formatDateTime($cal['fecha_calificacion']); ?>
                             </span>
-                            <div style="margin-top: 5px; font-size: 0.85rem; color: #666;">
-                                Trabajo: <strong><?php echo htmlspecialchars($cal['trabajo_titulo']); ?></strong>
+                            <?php if (isset($cal['maestro_nombre']) && !empty(trim($cal['maestro_nombre']))): ?>
+                            <div style="margin-top: 12px; font-size: 0.9rem; color: #555; text-align: center;">
+                                <i class="fas fa-user-tie" style="color: var(--primary-color); margin-right: 5px;"></i>
+                                Maestro: <strong style="color: var(--primary-color);"><?php echo htmlspecialchars($cal['maestro_nombre'], ENT_QUOTES, 'UTF-8'); ?></strong>
                             </div>
+                            <?php endif; ?>
+                            <?php if (isset($cal['trabajo_titulo']) && !empty(trim($cal['trabajo_titulo']))): ?>
+                            <div style="margin-top: 8px; font-size: 0.85rem; color: #666; text-align: center;">
+                                <i class="fas fa-briefcase" style="margin-right: 5px;"></i>
+                                Trabajo: <strong><?php echo htmlspecialchars($cal['trabajo_titulo'], ENT_QUOTES, 'UTF-8'); ?></strong>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -326,11 +339,33 @@ $title = 'Inicio';
     .section-title {
         font-size: 2rem;
     }
+    
+    .testimonials .section-title {
+        font-size: 2.25rem;
+        margin-bottom: 3rem;
+    }
+    
+    .testimonials {
+        padding: 3rem 0;
+    }
 }
 
 .testimonials {
-    padding: 4rem 0;
+    padding: 5rem 0;
     background: var(--white);
+}
+
+.testimonials .section-title {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 4rem;
+    color: var(--dark-color);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.testimonials .row {
+    margin-top: 2rem;
 }
 
 .testimonial-card {
@@ -401,22 +436,29 @@ $title = 'Inicio';
     color: #ddd;
 }
 
+.testimonial-body {
+    text-align: center;
+}
+
 .testimonial-body p {
     color: #555;
     font-style: italic;
     line-height: 1.6;
     margin-bottom: 1rem;
+    text-align: center;
 }
 
 .testimonial-footer {
     border-top: 1px solid #f0f0f0;
     padding-top: 0.8rem;
-    text-align: right;
+    text-align: center;
 }
 
 .testimonial-footer .date {
     font-size: 0.8rem;
     color: #999;
+    display: block;
+    margin-bottom: 8px;
 }
 </style>
 

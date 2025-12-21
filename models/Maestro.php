@@ -190,6 +190,26 @@ class Maestro {
         return $stmt->fetchAll();
     }
 
+    /**
+     * Obtener todos los maestros validados con pago activo y vigente
+     * Solo muestra maestros que han realizado el pago y que el pago no ha caducado
+     * Útil para calificaciones donde queremos mostrar solo maestros con pago vigente
+     */
+    public function getAllValidados() {
+        $query = "SELECT DISTINCT m.*, u.nombre_completo, u.email, u.telefono, u.foto_perfil, u.chapa
+                  FROM {$this->table} m
+                  INNER JOIN usuarios u ON m.usuario_id = u.id
+                  WHERE m.estado_perfil = 'validado' 
+                  AND u.estado = 'activo'
+                  AND m.pago_activo = 1
+                  AND (m.fecha_expiracion_pago IS NULL OR m.fecha_expiracion_pago > NOW())
+                  ORDER BY u.nombre_completo ASC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public function incrementViews($id) {
         $query = "UPDATE {$this->table} SET total_vistas = total_vistas + 1 WHERE id = :id";
         $stmt = $this->conn->prepare($query);

@@ -30,6 +30,9 @@ class AdminController extends Controller {
     }
 
     public function maestros() {
+        require_once 'models/PagoMaestro.php';
+        $pagoModel = new PagoMaestro($this->db);
+        
         $estado = $_GET['estado'] ?? 'pendiente';
         
         if ($estado === 'pendiente') {
@@ -44,6 +47,12 @@ class AdminController extends Controller {
             $stmt->bindParam(':estado', $estado);
             $stmt->execute();
             $maestros = $stmt->fetchAll();
+        }
+
+        // Agregar información de pago a cada maestro
+        foreach ($maestros as &$maestro) {
+            $pago = $pagoModel->getPagoParaValidar($maestro['id']);
+            $maestro['pago'] = $pago;
         }
 
         $data = [
@@ -533,7 +542,42 @@ class AdminController extends Controller {
 
     public function perfil() {
         $usuario = $this->usuarioModel->getById($_SESSION['usuario_id']);
-        $this->view('admin/perfil', ['usuario' => $usuario]);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = [];
+            if (isset($_POST['nombre_completo'])) {
+                $data['nombre_completo'] = sanitize($_POST['nombre_completo']);
+            }
+            if (isset($_POST['telefono'])) {
+                $data['telefono'] = sanitize($_POST['telefono']);
+            }
+            if (isset($_POST['password']) && !empty($_POST['password'])) {
+                $data['password'] = $_POST['password'];
+            }
+            if (isset($_FILES['foto_perfil']) && $_FILES['foto_perfil']['error'] === UPLOAD_ERR_OK) {
+                $upload = $this->uploadFile($_FILES['foto_perfil'], 'perfiles', ALLOWED_IMAGE_TYPES);
+                if ($upload['success']) {
+                    $data['foto_perfil'] = $upload['path'];
+                    // Guardar la ruta relativa en sesión
+                    $_SESSION['foto_perfil'] = $upload['path'];
+                }
+            }
+
+            if ($this->usuarioModel->update($_SESSION['usuario_id'], $data)) {
+                // Actualizar sesión con el nuevo nombre si fue cambiado
+                if (isset($data['nombre_completo'])) {
+                    $_SESSION['nombre_completo'] = $data['nombre_completo'];
+                }
+
+                $_SESSION['success'] = 'Perfil actualizado correctamente';
+                redirect('admin/perfil');
+            } else {
+                $_SESSION['error'] = 'Error al actualizar el perfil';
+            }
+        }
+
+        $data = ['usuario' => $usuario];
+        $this->view('admin/perfil', $data);
     }
 
     public function actualizarPassword() {
@@ -613,6 +657,29 @@ class AdminController extends Controller {
 
         header('Content-Type: application/json');
         echo json_encode($data);
+    }
+
+    public function getMaestroPago() {
+        if (!isset($_GET['id'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'ID no proporcionado']);
+            return;
+        }
+
+        require_once 'models/PagoMaestro.php';
+        $pagoModel = new PagoMaestro($this->db);
+        
+        $maestro_id = (int)$_GET['id'];
+        $pago = $pagoModel->getPagoParaValidar($maestro_id);
+
+        if (!$pago) {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'No se encontró pago para este maestro']);
+            return;
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode(['pago' => $pago]);
     }
 }
 

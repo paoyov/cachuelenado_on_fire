@@ -1,9 +1,0 @@
-{
-    "name": "cachueleando/on-fire",
-    "require": {},
-    "autoload": {
-        "psr-4": {
-            "Core\\": "core/"
-        }
-    }
-}

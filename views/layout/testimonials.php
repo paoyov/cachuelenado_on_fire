@@ -41,8 +41,22 @@
 
 <style>
 .testimonials {
-    padding: 4rem 0;
+    padding: 5rem 0;
     background: var(--white);
+}
+
+.testimonials .section-title {
+    text-align: center;
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 4rem;
+    color: var(--dark-color);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.testimonials .row {
+    margin-top: 2rem;
 }
 
 .testimonial-card {
@@ -113,22 +127,41 @@
     color: #ddd;
 }
 
+.testimonial-body {
+    text-align: center;
+}
+
 .testimonial-body p {
     color: #555;
     font-style: italic;
     line-height: 1.6;
     margin-bottom: 1rem;
+    text-align: center;
 }
 
 .testimonial-footer {
     border-top: 1px solid #f0f0f0;
     padding-top: 0.8rem;
-    text-align: right;
+    text-align: center;
 }
 
 .testimonial-footer .date {
     font-size: 0.8rem;
     color: #999;
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* Responsive para testimonials */
+@media (max-width: 768px) {
+    .testimonials .section-title {
+        font-size: 2.25rem;
+        margin-bottom: 3rem;
+    }
+    
+    .testimonials {
+        padding: 3rem 0;
+    }
 }
 </style>
 <?php endif; ?>

@@ -8,9 +8,13 @@ $title = 'Perfil del Maestro';
             <div class="card">
                 <div class="card-body text-center">
                     <?php if (!empty($maestro['foto_perfil'])): ?>
-                        <img src="<?php echo UPLOAD_URL . $maestro['foto_perfil']; ?>" alt="<?php echo htmlspecialchars($maestro['nombre_completo']); ?>" style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem;">
+                        <div class="maestro-profile-photo-container">
+                            <img src="<?php echo UPLOAD_URL . $maestro['foto_perfil']; ?>" alt="<?php echo htmlspecialchars($maestro['nombre_completo']); ?>" class="maestro-profile-photo">
+                        </div>
                     <?php else: ?>
-                        <i class="fas fa-user-circle" style="font-size: 10rem; color: var(--gray-color);"></i>
+                        <div class="maestro-profile-photo-container">
+                            <i class="fas fa-user-circle maestro-profile-icon"></i>
+                        </div>
                     <?php endif; ?>
                     
                     <h2><?php echo htmlspecialchars($maestro['chapa'] ?: $maestro['nombre_completo']); ?></h2>
@@ -158,6 +162,39 @@ $title = 'Perfil del Maestro';
 </div>
 
 <style>
+/* Estilos para la foto de perfil del maestro */
+.maestro-profile-photo-container {
+    width: 100%;
+    max-width: 280px;
+    height: 280px;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    box-sizing: border-box;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.maestro-profile-photo {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    object-position: center;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.maestro-profile-icon {
+    font-size: 10rem;
+    color: var(--gray-color);
+}
+
 .portfolio-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

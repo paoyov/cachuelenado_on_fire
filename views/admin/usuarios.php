@@ -158,10 +158,10 @@ $title = 'Gestión de Usuarios';
                 </table>
             </div>
         </div>
-        <div class="card-footer bg-white py-3 border-top">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <small class="text-muted">
+        <div class="card-footer bg-white py-4 border-top usuarios-table-footer">
+            <div class="usuarios-footer-info">
+                <div class="footer-info-item">
+                    <small class="text-muted" style="font-size: 0.9rem;">
                         <i class="fas fa-users me-2"></i>
                         Mostrando <strong><?php echo count($usuarios); ?></strong> registros
                         <?php if ($tipo): ?>
@@ -169,8 +169,8 @@ $title = 'Gestión de Usuarios';
                         <?php endif; ?>
                     </small>
                 </div>
-                <div class="col-md-6 text-end">
-                    <small class="text-muted">
+                <div class="footer-info-item">
+                    <small class="text-muted" style="font-size: 0.9rem;">
                         <i class="fas fa-clock me-2"></i>
                         Última actualización: <?php echo date('d/m/Y H:i'); ?>
                     </small>
@@ -509,6 +509,27 @@ document.addEventListener('DOMContentLoaded', function() {
     margin-bottom: 0;
 }
 
+.table tbody {
+    border-spacing: 0;
+}
+
+.table tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.table tbody tr:last-child {
+    border-bottom: none;
+    margin-bottom: 1.5rem;
+}
+
+.table tbody tr:last-child td {
+    padding-bottom: 2rem !important;
+}
+
+.card-body {
+    padding-bottom: 1.5rem !important;
+}
+
 .table thead th {
     font-weight: 600;
     text-transform: uppercase;
@@ -518,8 +539,22 @@ document.addEventListener('DOMContentLoaded', function() {
     color: #6c757d;
     white-space: nowrap;
 }
-.table tbody tr { transition: background 0.2s; }
-.table tbody tr:hover { background: #f8f9fa; }
+.table tbody tr { 
+    transition: background 0.2s; 
+}
+
+.table tbody tr:hover { 
+    background: #f8f9fa; 
+}
+
+.table tbody td {
+    padding: 1.25rem 1rem !important;
+    vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+    padding-bottom: 1.5rem;
+}
 
 /* Avatar */
 .avatar-circle {
@@ -1067,6 +1102,35 @@ document.addEventListener('DOMContentLoaded', function() {
     .confirm-buttons .btn {
         width: 100%;
     }
+}
+
+/* Espaciado mejorado entre tabla y footer */
+.usuarios-table-footer {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+}
+
+.usuarios-footer-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.footer-info-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.footer-info-item small {
+    display: flex;
+    align-items: center;
+}
+
+.table-responsive {
+    padding-bottom: 1rem;
 }
 
 </style>

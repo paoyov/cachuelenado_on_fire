@@ -107,6 +107,29 @@ $title = 'Mis Calificaciones';
 <!-- Incluir el modal de calificación existente -->
 <?php include 'calificar_modal.php'; ?>
 
+<!-- Modal de Alerta Profesional -->
+<div id="infoAlertModal" class="modal-alert" style="display: none;" onclick="if(event.target === this) closeInfoAlertModal()">
+    <div class="modal-alert-content" onclick="event.stopPropagation()">
+        <div class="modal-alert-header">
+            <button type="button" class="modal-alert-close" onclick="closeInfoAlertModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-alert-icon">
+                <i class="fas fa-info-circle"></i>
+            </div>
+        </div>
+        <div class="modal-alert-body">
+            <h3 class="modal-alert-title">Información</h3>
+            <p class="modal-alert-message" id="infoAlertMessage"></p>
+        </div>
+        <div class="modal-alert-footer">
+            <button type="button" class="btn btn-primary" onclick="closeInfoAlertModal()">
+                <i class="fas fa-check"></i> Entendido
+            </button>
+        </div>
+    </div>
+</div>
+
 <style>
 .page-header {
     margin-bottom: 2rem;
@@ -225,6 +248,199 @@ $title = 'Mis Calificaciones';
     color: #ff6b35;
 }
 
+/* ============================================
+   Modal de Alerta Profesional
+   ============================================ */
+
+.modal-alert {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-alert-content {
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    max-width: 450px;
+    width: 90%;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-alert-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem 1.5rem;
+    background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+}
+
+.modal-alert-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    margin: 0 auto;
+    position: relative;
+}
+
+.modal-alert-icon i {
+    font-size: 2rem;
+    color: #ffc107;
+}
+
+.modal-alert-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    font-size: 1.25rem;
+    color: #fff;
+    cursor: pointer;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.modal-alert-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
+    transform: rotate(90deg);
+}
+
+.modal-alert-body {
+    padding: 2rem 1.5rem 1.5rem;
+    text-align: center;
+    padding-top: 1.5rem;
+}
+
+.modal-alert-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0 0 1rem 0;
+}
+
+.modal-alert-message {
+    font-size: 1rem;
+    color: #6c757d;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.modal-alert-footer {
+    padding: 1rem 1.5rem 1.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.modal-alert-footer .btn {
+    min-width: 120px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.modal-alert-footer .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Variantes de color según el tipo */
+.modal-alert[data-type="warning"] .modal-alert-header {
+    background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
+}
+
+.modal-alert[data-type="warning"] .modal-alert-icon i {
+    color: #ffc107;
+}
+
+.modal-alert[data-type="error"] .modal-alert-header {
+    background: linear-gradient(135deg, #dc3545 0%, #e85d75 100%);
+}
+
+.modal-alert[data-type="error"] .modal-alert-icon i {
+    color: #dc3545;
+}
+
+.modal-alert[data-type="success"] .modal-alert-header {
+    background: linear-gradient(135deg, #28a745 0%, #48c765 100%);
+}
+
+.modal-alert[data-type="success"] .modal-alert-icon i {
+    color: #28a745;
+}
+
+.modal-alert[data-type="info"] .modal-alert-header {
+    background: linear-gradient(135deg, #17a2b8 0%, #3db8d1 100%);
+}
+
+.modal-alert[data-type="info"] .modal-alert-icon i {
+    color: #17a2b8;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .modal-alert-content {
+        width: 95%;
+        max-width: none;
+    }
+    
+    .modal-alert-body {
+        padding: 1.5rem 1rem 1rem;
+    }
+    
+    .modal-alert-title {
+        font-size: 1.25rem;
+    }
+    
+    .modal-alert-message {
+        font-size: 0.9rem;
+    }
+}
+
 
 </style>
 
@@ -234,12 +450,56 @@ $title = 'Mis Calificaciones';
     // Ensure it's a valid array even if PHP returns null/false
     // maestrosData is already defined in calificar_modal.php
 
+    // Función para mostrar alerta profesional
+    function showInfoAlert(message, type = 'info') {
+        const modal = document.getElementById('infoAlertModal');
+        const messageEl = document.getElementById('infoAlertMessage');
+        const iconEl = modal.querySelector('.modal-alert-icon i');
+        const titleEl = modal.querySelector('.modal-alert-title');
+        
+        if (!modal || !messageEl) return;
+        
+        // Configurar icono y color según el tipo
+        const config = {
+            'info': { icon: 'fa-info-circle', title: 'Información', color: '#17a2b8' },
+            'warning': { icon: 'fa-exclamation-triangle', title: 'Advertencia', color: '#ffc107' },
+            'error': { icon: 'fa-times-circle', title: 'Error', color: '#dc3545' },
+            'success': { icon: 'fa-check-circle', title: 'Éxito', color: '#28a745' }
+        };
+        
+        const alertConfig = config[type] || config['info'];
+        
+        iconEl.className = 'fas ' + alertConfig.icon;
+        iconEl.style.color = alertConfig.color;
+        titleEl.textContent = alertConfig.title;
+        messageEl.textContent = message;
+        
+        modal.style.display = 'flex';
+    }
+    
+    function closeInfoAlertModal() {
+        const modal = document.getElementById('infoAlertModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+    // Cerrar modal con tecla ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('infoAlertModal');
+            if (modal && modal.style.display === 'flex') {
+                closeInfoAlertModal();
+            }
+        }
+    });
+
     function openRatingModal() {
         try {
             const select = document.getElementById('maestro-select');
             if (!select) {
                 console.error('Element #maestro-select not found');
-                alert('Error: No se encontró el selector de maestros.');
+                showInfoAlert('Error: No se encontró el selector de maestros.', 'error');
                 return;
             }
 
@@ -247,8 +507,14 @@ $title = 'Mis Calificaciones';
             
             if (!Array.isArray(maestrosData)) {
                  console.error('maestrosData is not an array', maestrosData);
-                 alert('Error de datos: No se pudieron cargar los maestros.');
+                 showInfoAlert('Error de datos: No se pudieron cargar los maestros.', 'error');
                  return;
+            }
+
+            if (maestrosData.length === 0) {
+                console.warn('No hay maestros disponibles para calificar');
+                showInfoAlert('No hay maestros disponibles en este momento. Solo se muestran maestros con pago activo y vigente. Por favor, intenta más tarde.', 'warning');
+                return;
             }
 
             // Populate Dropdown
@@ -294,12 +560,12 @@ $title = 'Mis Calificaciones';
                 // Using flex to ensure the CSS centering works correctly
                 modal.style.display = 'flex';
             } else {
-                alert('Error: No se encontró el modal.');
+                showInfoAlert('Error: No se encontró el modal de calificación.', 'error');
             }
 
         } catch (e) {
             console.error('Error opening modal:', e);
-            alert('Ocurrió un error al abrir el formulario: ' + e.message);
+            showInfoAlert('Ocurrió un error al abrir el formulario: ' + e.message, 'error');
         }
     }
 </script>

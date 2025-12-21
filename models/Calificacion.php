@@ -90,15 +90,25 @@ class Calificacion {
         return $result['total'] > 0;
     }
 
+    /**
+     * Obtener calificaciones recientes para mostrar en la página principal
+     * Las recomendaciones son permanentes (no expiran) - se muestran todas las calificaciones
+     * ordenadas por fecha más reciente
+     * 
+     * @param int $limit Número de calificaciones a obtener
+     * @return array Lista de calificaciones con información del cliente y trabajo
+     */
     public function getRecent($limit = 6) {
         $query = "SELECT c.*, 
                          uc.nombre_completo as cliente_nombre, 
                          uc.foto_perfil as cliente_foto,
-                         um.nombre_completo as maestro_nombre
+                         um.nombre_completo as maestro_nombre,
+                         COALESCE(t.titulo, '') as trabajo_titulo
                   FROM {$this->table} c
                   INNER JOIN usuarios uc ON c.cliente_id = uc.id
                   INNER JOIN maestros m ON c.maestro_id = m.id
                   INNER JOIN usuarios um ON m.usuario_id = um.id
+                  LEFT JOIN trabajos t ON c.trabajo_id = t.id
                   ORDER BY c.fecha_calificacion DESC
                   LIMIT :limit";
         
