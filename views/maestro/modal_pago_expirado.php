@@ -189,12 +189,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .modal-pago-obligatorio .modal-pago-container {
     pointer-events: auto;
+    position: relative;
+    z-index: 10000;
 }
 
 .modal-pago-expirado .modal-pago-content {
     border: 3px solid #dc3545;
     box-shadow: 0 20px 60px rgba(220, 53, 69, 0.4);
     animation: shake 0.5s ease;
+    position: relative;
+    z-index: 10001;
+    display: block;
+    visibility: visible;
+    opacity: 1;
 }
 
 @keyframes shake {
@@ -307,7 +314,8 @@ document.addEventListener('DOMContentLoaded', function() {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.85);
-    z-index: -1;
+    z-index: 9998;
+    pointer-events: none;
 }
 
 /* Responsive */

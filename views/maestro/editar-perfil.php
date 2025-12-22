@@ -11,6 +11,25 @@ $title = 'Editar Perfil';
     <?php if (!empty($_SESSION['success'])): ?>
         <div class="alert alert-success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
     <?php endif; ?>
+    
+    <?php if ($maestro['estado_perfil'] === 'rechazado'): ?>
+    <div class="alert alert-warning" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 1.25rem 1.5rem; margin-bottom: 2rem; border-radius: 8px;">
+        <div style="display: flex; align-items: flex-start; gap: 1rem;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; color: #ffc107; margin-top: 0.2rem;"></i>
+            <div style="flex: 1;">
+                <strong style="color: #856404; display: block; margin-bottom: 0.5rem;">Tu perfil ha sido rechazado</strong>
+                <?php if (!empty($maestro['motivo_rechazo'])): ?>
+                <p style="color: #856404; margin: 0.5rem 0;">
+                    <strong>Motivo del rechazo:</strong> <?php echo htmlspecialchars($maestro['motivo_rechazo']); ?>
+                </p>
+                <?php endif; ?>
+                <p style="color: #856404; margin: 0.5rem 0 0 0;">
+                    Por favor, corrige los problemas indicados y guarda los cambios. Tu perfil será enviado nuevamente para validación.
+                </p>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <form method="POST" action="<?php echo BASE_URL; ?>maestro/perfil-editar" enctype="multipart/form-data">
         <div class="form-group">

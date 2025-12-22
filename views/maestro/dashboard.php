@@ -12,7 +12,15 @@ $title = 'Panel del Maestro';
 <div class="container">
     <?php 
     $pago_activo = $pago_activo ?? null;
-    $mostrar_modal = $mostrar_modal_pago ?? false;
+    $mostrar_modal = isset($mostrar_modal_pago) ? $mostrar_modal_pago : false;
+    // Si no hay pago activo Y no está expirado (usuario nuevo), mostrar el modal normal
+    if (!$pago_activo && !$pago_expirado) {
+        $mostrar_modal = true;
+    }
+    // Si está expirado, NO mostrar el modal normal, mostrar el expirado
+    if ($pago_expirado) {
+        $mostrar_modal = false;
+    }
     ?>
     
     <?php if (!$pago_activo || (isset($pago_activo['fecha_expiracion']) && strtotime($pago_activo['fecha_expiracion']) < time())): ?>
@@ -211,18 +219,154 @@ $title = 'Panel del Maestro';
 <?php endif; ?>
 
 <script>
+// Función para ir a registro (volver a registrarse) - DEFINIDA ANTES DEL MODAL
+window.irAEditarPerfil = function(e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    console.log('=== FUNCIÓN irAEditarPerfil EJECUTADA ===');
+    
+    // Cerrar modal
+    const modal = document.getElementById('modalRechazoPerfil');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    
+    // URL directa - usar múltiples métodos para asegurar que funcione
+    const baseUrl = '<?php echo BASE_URL; ?>';
+    const registerUrl = baseUrl + 'register';
+    const fallbackUrl = 'http://localhost:8012/Cachueleando_On_Fire/register';
+    
+    console.log('BASE_URL:', baseUrl);
+    console.log('URL completa:', registerUrl);
+    console.log('URL fallback:', fallbackUrl);
+    
+    // Intentar redirección con múltiples métodos
+    try {
+        // Método 1: window.location.replace (recomendado)
+        window.location.replace(registerUrl);
+    } catch (error) {
+        console.error('Error con replace:', error);
+        try {
+            // Método 2: window.location.href
+            window.location.href = registerUrl;
+        } catch (error2) {
+            console.error('Error con href:', error2);
+            // Método 3: Fallback a URL hardcodeada
+            window.location.href = fallbackUrl;
+        }
+    }
+    
+    // Si después de 500ms no ha redirigido, forzar con fallback
+    setTimeout(function() {
+        if (window.location.href.indexOf('register') === -1) {
+            console.log('Forzando redirección con fallback...');
+            window.location.href = fallbackUrl;
+        }
+    }, 500);
+    
+    return false;
+};
+</script>
+
+<!-- Modal de Rechazo de Perfil (Tiempo Real) -->
+<div class="modal-rechazo-overlay" id="modalRechazoPerfil" style="display: none;">
+    <div class="modal-rechazo-container">
+        <div class="modal-rechazo-content">
+            <div class="modal-rechazo-header">
+                <div class="modal-rechazo-icon-wrapper">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <h3 class="modal-rechazo-title">Perfil Rechazado</h3>
+                <p class="modal-rechazo-subtitle">Tu perfil ha sido rechazado por el administrador</p>
+            </div>
+            
+            <div class="modal-rechazo-body">
+                <div class="rechazo-alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Tu solicitud de registro ha sido rechazada</strong>
+                        <p>El administrador ha revisado tu perfil y ha decidido rechazarlo. Por favor, revisa el motivo y corrige los problemas indicados.</p>
+                    </div>
+                </div>
+                
+                <div class="rechazo-motivo-section">
+                    <h4 class="rechazo-motivo-title">
+                        <i class="fas fa-comment-alt"></i> Motivo del Rechazo
+                    </h4>
+                    <div class="rechazo-motivo-content" id="rechazoMotivoContent">
+                        <p class="rechazo-motivo-text">Cargando motivo...</p>
+                    </div>
+                </div>
+                
+                <div class="rechazo-acciones">
+                    <p class="rechazo-acciones-text">
+                        <i class="fas fa-info-circle"></i>
+                        Puedes volver a registrarte corrigiendo los problemas indicados. Tu nuevo registro será enviado para validación.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="modal-rechazo-footer">
+                <button type="button" class="btn-rechazo-cancelar" onclick="cerrarModalRechazo()">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
 function abrirModalPago() {
     const modal = document.getElementById('modalPagoYape');
     if (modal) {
         modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
     }
 }
 
-// Mostrar modal automáticamente si está en sesión
-<?php if ($mostrar_modal): ?>
-document.addEventListener('DOMContentLoaded', function() {
-    abrirModalPago();
-});
+// Mostrar modal automáticamente si debe mostrarse
+<?php if ($mostrar_modal || !$pago_activo): ?>
+console.log('Intentando mostrar modal de pago. mostrar_modal: <?php echo $mostrar_modal ? "true" : "false"; ?>, pago_activo: <?php echo $pago_activo ? "true" : "false"; ?>');
+(function() {
+    let intentos = 0;
+    const maxIntentos = 50;
+    
+    function mostrarModalAuto() {
+        intentos++;
+        const modal = document.getElementById('modalPagoYape');
+        console.log('Intento ' + intentos + ': Buscando modal...', modal ? 'Encontrado' : 'No encontrado');
+        
+        if (modal) {
+            console.log('Mostrando modal de pago');
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            return true;
+        } else if (intentos < maxIntentos) {
+            // Si el modal aún no existe, intentar de nuevo
+            setTimeout(mostrarModalAuto, 100);
+        } else {
+            console.error('No se pudo encontrar el modal después de ' + maxIntentos + ' intentos');
+        }
+        return false;
+    }
+    
+    // Intentar mostrar inmediatamente
+    if (!mostrarModalAuto()) {
+        // También cuando el DOM esté completamente cargado
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('DOM cargado, intentando mostrar modal');
+                setTimeout(mostrarModalAuto, 50);
+            });
+        } else {
+            setTimeout(mostrarModalAuto, 50);
+        }
+    }
+})();
 <?php endif; ?>
 
 // Función para configurar el modal expirado
@@ -330,6 +474,89 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(updateCountdown, 1000);
 });
 <?php endif; ?>
+
+// ============================================
+// DETECCIÓN DE RECHAZO EN TIEMPO REAL
+// ============================================
+let rechazoPollingInterval = null;
+let rechazoYaMostrado = false;
+
+// Función para mostrar modal de rechazo
+function mostrarModalRechazo(motivo) {
+    if (rechazoYaMostrado) return; // Evitar mostrar múltiples veces
+    
+    const modal = document.getElementById('modalRechazoPerfil');
+    const motivoContent = document.getElementById('rechazoMotivoContent');
+    
+    if (modal && motivoContent) {
+        // Escapar HTML para seguridad
+        const motivoEscapado = motivo ? motivo.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') : 'No se especificó un motivo.';
+        motivoContent.innerHTML = `<p class="rechazo-motivo-text">${motivoEscapado}</p>`;
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        rechazoYaMostrado = true;
+        
+        // Detener polling una vez mostrado
+        if (rechazoPollingInterval) {
+            clearInterval(rechazoPollingInterval);
+        }
+    }
+}
+
+// Función para cerrar modal de rechazo
+function cerrarModalRechazo() {
+    const modal = document.getElementById('modalRechazoPerfil');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// La función irAEditarPerfil ya está definida arriba antes del modal (línea 223)
+
+// Función para verificar estado del perfil
+function verificarEstadoPerfil() {
+    fetch('<?php echo BASE_URL; ?>maestro/verificar-estado-perfil', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.rechazado && data.motivo_rechazo && !rechazoYaMostrado) {
+            // Perfil rechazado, mostrar modal
+            mostrarModalRechazo(data.motivo_rechazo);
+        }
+    })
+    .catch(error => {
+        console.error('Error al verificar estado del perfil:', error);
+    });
+}
+
+// Iniciar polling para verificar rechazo en tiempo real
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar inmediatamente
+    verificarEstadoPerfil();
+    
+    // Verificar cada 3 segundos
+    rechazoPollingInterval = setInterval(verificarEstadoPerfil, 3000);
+    
+    // Verificar cuando se vuelve a la pestaña
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && !rechazoYaMostrado) {
+            verificarEstadoPerfil();
+        }
+    });
+    
+});
+
+// Limpiar intervalo al salir
+window.addEventListener('beforeunload', function() {
+    if (rechazoPollingInterval) {
+        clearInterval(rechazoPollingInterval);
+    }
+});
 </script>
 
 <style>
@@ -611,6 +838,303 @@ document.addEventListener('DOMContentLoaded', function() {
         padding: 1rem;
         flex-direction: column;
         text-align: center;
+    }
+}
+</style>
+
+<style>
+/* ============================================
+   Modal de Rechazo de Perfil
+   ============================================ */
+.modal-rechazo-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    padding: 20px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-rechazo-container {
+    width: 100%;
+    max-width: 600px;
+    margin: auto;
+}
+
+.modal-rechazo-content {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    animation: slideUp 0.3s ease-out;
+    border: 3px solid #dc3545;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-rechazo-header {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: relative;
+}
+
+.modal-rechazo-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 3rem;
+    animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-10px) rotate(-5deg);
+    }
+    75% {
+        transform: translateX(10px) rotate(5deg);
+    }
+}
+
+.modal-rechazo-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: white;
+}
+
+.modal-rechazo-subtitle {
+    margin: 0;
+    font-size: 1rem;
+    opacity: 0.9;
+    color: white;
+}
+
+.modal-rechazo-body {
+    padding: 2.5rem 2rem;
+}
+
+.rechazo-alert {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-left: 5px solid #ffc107;
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+}
+
+.rechazo-alert i {
+    color: #ffc107;
+    font-size: 2rem;
+    margin-top: 0.2rem;
+    flex-shrink: 0;
+}
+
+.rechazo-alert strong {
+    display: block;
+    color: #856404;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.rechazo-alert p {
+    margin: 0;
+    color: #856404;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.rechazo-motivo-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 2px solid #e9ecef;
+}
+
+.rechazo-motivo-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.rechazo-motivo-title i {
+    color: #dc3545;
+    font-size: 1.2rem;
+}
+
+.rechazo-motivo-content {
+    background: white;
+    border-radius: 8px;
+    padding: 1.25rem;
+    border: 2px solid #dc3545;
+    min-height: 100px;
+}
+
+.rechazo-motivo-text {
+    margin: 0;
+    color: #495057;
+    line-height: 1.8;
+    font-size: 1rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.rechazo-acciones {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-left: 4px solid #2196f3;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.rechazo-acciones-text {
+    margin: 0;
+    color: #1565c0;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    line-height: 1.6;
+}
+
+.rechazo-acciones-text i {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.modal-rechazo-footer {
+    border-top: 2px solid #f0f0f0;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: center;
+    background: #f8f9fa;
+}
+
+.btn-rechazo-cancelar {
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.875rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-rechazo-cancelar:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+.btn-rechazo-entendido {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white !important;
+    border: none;
+    border-radius: 10px;
+    padding: 0.875rem 2.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+    text-decoration: none !important;
+}
+
+.btn-rechazo-entendido:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.5);
+}
+
+.btn-rechazo-entendido:active {
+    transform: translateY(0);
+}
+
+.btn-rechazo-entendido i {
+    font-size: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .modal-rechazo-container {
+        max-width: 100%;
+    }
+    
+    .modal-rechazo-header {
+        padding: 2rem 1.5rem;
+    }
+    
+    .modal-rechazo-body {
+        padding: 2rem 1.5rem;
+    }
+    
+    .modal-rechazo-title {
+        font-size: 1.5rem;
+    }
+    
+    .modal-rechazo-icon-wrapper {
+        width: 60px;
+        height: 60px;
+        font-size: 2.5rem;
+    }
+    
+    .rechazo-alert {
+        padding: 1.25rem 1.5rem;
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .rechazo-motivo-section {
+        padding: 1.25rem;
     }
 }
 </style>

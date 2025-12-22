@@ -113,18 +113,32 @@ class Maestro {
     }
 
     public function validate($id, $estado, $validado_por, $motivo_rechazo = null) {
-        $query = "UPDATE {$this->table} 
-                  SET estado_perfil = :estado, 
-                      validado_por = :validado_por, 
-                      fecha_validacion = NOW(),
-                      motivo_rechazo = :motivo_rechazo
-                  WHERE id = :id";
+        // Si el estado es 'pendiente' y no hay validado_por, no actualizar esos campos
+        if ($estado === 'pendiente' && $validado_por === null) {
+            $query = "UPDATE {$this->table} 
+                      SET estado_perfil = :estado,
+                          motivo_rechazo = :motivo_rechazo
+                      WHERE id = :id";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':estado', $estado);
+            $stmt->bindParam(':motivo_rechazo', $motivo_rechazo);
+            $stmt->bindParam(':id', $id);
+        } else {
+            $query = "UPDATE {$this->table} 
+                      SET estado_perfil = :estado, 
+                          validado_por = :validado_por, 
+                          fecha_validacion = NOW(),
+                          motivo_rechazo = :motivo_rechazo
+                      WHERE id = :id";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':estado', $estado);
+            $stmt->bindParam(':validado_por', $validado_por);
+            $stmt->bindParam(':motivo_rechazo', $motivo_rechazo);
+            $stmt->bindParam(':id', $id);
+        }
         
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':estado', $estado);
-        $stmt->bindParam(':validado_por', $validado_por);
-        $stmt->bindParam(':motivo_rechazo', $motivo_rechazo);
-        $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }
 

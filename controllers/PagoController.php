@@ -22,16 +22,31 @@ class PagoController extends Controller {
      */
     public function procesarPago() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                exit;
+            }
             redirect('maestro/dashboard');
         }
 
         if (!isLoggedIn() || !isMaestro()) {
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'No autorizado']);
+                exit;
+            }
             $_SESSION['error'] = 'No autorizado';
             redirect('home');
         }
 
         $maestro = $this->maestroModel->getByUsuarioId($_SESSION['usuario_id']);
         if (!$maestro) {
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Perfil de maestro no encontrado']);
+                exit;
+            }
             $_SESSION['error'] = 'Perfil de maestro no encontrado';
             redirect('maestro/dashboard');
         }
@@ -64,12 +79,66 @@ class PagoController extends Controller {
             // Eliminar flag de mostrar modal
             unset($_SESSION['mostrar_modal_pago']);
             
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Pago registrado exitosamente. Será verificado por un administrador en breve.',
+                    'pago_id' => $pago_id
+                ]);
+                exit;
+            }
+            
             $_SESSION['success'] = 'Pago registrado exitosamente. Será verificado por un administrador en breve.';
         } else {
+            if ($this->isAjaxRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Error al registrar el pago. Por favor, intente nuevamente.']);
+                exit;
+            }
             $_SESSION['error'] = 'Error al registrar el pago. Por favor, intente nuevamente.';
         }
 
-        redirect('maestro/dashboard');
+        if (!$this->isAjaxRequest()) {
+            redirect('maestro/dashboard');
+        }
+    }
+    
+    /**
+     * Verificar si es una petición AJAX
+     */
+    private function isAjaxRequest() {
+        return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+               strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+    }
+    
+    /**
+     * Verificar estado del pago (para polling)
+     */
+    public function verificarEstado() {
+        if (!isLoggedIn() || !isMaestro()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'No autorizado']);
+            exit;
+        }
+
+        $maestro = $this->maestroModel->getByUsuarioId($_SESSION['usuario_id']);
+        if (!$maestro) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Perfil no encontrado']);
+            exit;
+        }
+
+        $pago = $this->pagoModel->getPagoParaValidar($maestro['id']);
+        
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'pago' => $pago,
+            'estado' => $pago ? $pago['estado'] : 'pendiente',
+            'verificado' => $pago && $pago['estado'] === 'verificado'
+        ]);
+        exit;
     }
 
     /**

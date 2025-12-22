@@ -681,5 +681,72 @@ class AdminController extends Controller {
         header('Content-Type: application/json');
         echo json_encode(['pago' => $pago]);
     }
+    
+    /**
+     * API: Obtener maestros pendientes con pagos actualizados (para actualización en tiempo real)
+     */
+    public function getMaestrosPendientesActualizados() {
+        if (!isAdmin()) {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'No autorizado']);
+            exit;
+        }
+        
+        require_once 'models/PagoMaestro.php';
+        require_once 'models/DocumentoMaestro.php';
+        $pagoModel = new PagoMaestro($this->db);
+        
+        $maestros = $this->maestroModel->getPendingValidation();
+        
+        // Agregar información de pago a cada maestro
+        $maestrosData = [];
+        foreach ($maestros as $maestro) {
+            $pago = $pagoModel->getPagoParaValidar($maestro['id']);
+            
+            // Obtener especialidades
+            $especialidades = $this->maestroModel->getEspecialidades($maestro['id']);
+            $especialidadesNombres = array_map(function($esp) {
+                return $esp['nombre'];
+            }, $especialidades);
+            
+            // Obtener documentos
+            $documentoModel = new DocumentoMaestro($this->db);
+            $documentos = $documentoModel->getByMaestro($maestro['id']);
+            
+            $maestroData = [
+                'id' => $maestro['id'],
+                'nombre_completo' => $maestro['nombre_completo'],
+                'email' => $maestro['email'],
+                'telefono' => $maestro['telefono'],
+                'dni' => $maestro['dni'],
+                'especialidades' => $especialidadesNombres,
+                'documentos_count' => count($documentos),
+                'pago' => $pago
+            ];
+            
+            if ($pago) {
+                // Verificar si el pago está caducado
+                $pago_caducado = false;
+                $estado_display = $pago['estado'];
+                
+                if (!empty($pago['fecha_expiracion']) && $pago['estado'] === 'verificado') {
+                    $fecha_expiracion = new DateTime($pago['fecha_expiracion']);
+                    $fecha_actual = new DateTime();
+                    if ($fecha_expiracion < $fecha_actual) {
+                        $pago_caducado = true;
+                        $estado_display = 'caducado';
+                    }
+                }
+                
+                $maestroData['pago']['estado_display'] = $estado_display;
+                $maestroData['pago']['caducado'] = $pago_caducado;
+            }
+            
+            $maestrosData[] = $maestroData;
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'maestros' => $maestrosData]);
+    }
 }
 

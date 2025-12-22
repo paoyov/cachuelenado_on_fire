@@ -207,5 +207,5 @@ Este proyecto es de uso educativo y comercial.
 
 ---
 
-**Desarrollado con ❤️ para conectar maestros de oficio con clientes en Lima**
+**Desarrollado con paoyov❤️ para conectar maestros de oficio con clientes en Lima**
 

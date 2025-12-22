@@ -37,9 +37,9 @@ $title = 'Gestionar Maestros';
                                 <th style="text-align: center;">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="maestrosTableBody">
                             <?php foreach ($maestros as $maestro): ?>
-                            <tr>
+                            <tr data-maestro-id="<?php echo $maestro['id']; ?>" data-pago-id="<?php echo !empty($maestro['pago']) ? $maestro['pago']['id'] : ''; ?>">
                                 <td><?php echo htmlspecialchars($maestro['nombre_completo']); ?></td>
                                 <td><?php echo htmlspecialchars($maestro['email']); ?></td>
                                 <td><?php echo htmlspecialchars($maestro['telefono']); ?></td>
@@ -601,6 +601,181 @@ document.addEventListener('visibilitychange', function() {
         actualizarEstadosPagos();
     }
 });
+
+// ============================================
+// ACTUALIZACIÓN EN TIEMPO REAL DE PAGOS
+// ============================================
+<?php if ($estado === 'pendiente'): ?>
+let pollingInterval = null;
+let maestrosActuales = new Map(); // Para rastrear maestros existentes
+
+// Función para obtener el HTML del badge de pago
+function getPagoBadgeHTML(pago) {
+    if (!pago) {
+        return '<span class="badge badge-secondary">Sin pago</span>';
+    }
+    
+    const estado = pago.estado_display || pago.estado;
+    const caducado = pago.caducado || false;
+    
+    let badge_class = 'badge-secondary';
+    if (caducado) {
+        badge_class = 'badge-expired';
+    } else if (pago.estado === 'verificado') {
+        badge_class = 'badge-success';
+    } else if (pago.estado === 'rechazado') {
+        badge_class = 'badge-danger';
+    } else {
+        badge_class = 'badge-warning';
+    }
+    
+    let html = `<span class="badge ${badge_class}" data-estado="${pago.estado}" data-expiracion="${pago.fecha_expiracion || ''}">${estado.charAt(0).toUpperCase() + estado.slice(1)}</span>`;
+    html += `<br><small class="text-muted">S/ ${parseFloat(pago.monto).toFixed(2)}</small>`;
+    
+    if (caducado && pago.fecha_expiracion) {
+        const fechaExp = new Date(pago.fecha_expiracion);
+        html += `<br><small class="text-danger" style="font-size: 0.75rem;"><i class="fas fa-clock"></i> Expiró: ${fechaExp.toLocaleDateString('es-PE')} ${fechaExp.toLocaleTimeString('es-PE', {hour: '2-digit', minute: '2-digit'})}</small>`;
+    } else if (pago.fecha_expiracion && pago.estado === 'verificado') {
+        const fechaExp = new Date(pago.fecha_expiracion);
+        html += `<br><small class="text-muted" style="font-size: 0.75rem;"><i class="fas fa-clock"></i> Expira: ${fechaExp.toLocaleDateString('es-PE')} ${fechaExp.toLocaleTimeString('es-PE', {hour: '2-digit', minute: '2-digit'})}</small>`;
+    }
+    
+    return html;
+}
+
+// Función para obtener el HTML de especialidades
+function getEspecialidadesHTML(especialidades) {
+    return especialidades.map(esp => `<span class="tag">${esp}</span>`).join(' ');
+}
+
+// Función para obtener el HTML de acciones
+function getAccionesHTML(maestroId, tienePago) {
+    let html = '<div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">';
+    html += `<button class="btn btn-sm btn-success" onclick="validarPerfil(${maestroId})"><i class="fas fa-check"></i> Validar</button>`;
+    html += `<button class="btn btn-sm btn-danger" onclick="rechazarPerfil(${maestroId})"><i class="fas fa-times"></i> Rechazar</button>`;
+    if (tienePago) {
+        html += `<button class="btn btn-sm btn-purple" onclick="verPago(${maestroId})"><i class="fas fa-money-bill-wave"></i> Pagos</button>`;
+    }
+    html += `<button class="btn btn-sm btn-outline" onclick="verDetalleMaestro(${maestroId})"><i class="fas fa-eye"></i> Ver</button>`;
+    html += '</div>';
+    return html;
+}
+
+// Función para actualizar la tabla con datos en tiempo real
+function actualizarTablaMaestros(maestrosData) {
+    const tbody = document.getElementById('maestrosTableBody');
+    if (!tbody) return;
+    
+    const maestrosMap = new Map();
+    maestrosData.forEach(maestro => {
+        maestrosMap.set(maestro.id, maestro);
+    });
+    
+    // Actualizar filas existentes o agregar nuevas
+    maestrosData.forEach(maestro => {
+        let row = tbody.querySelector(`tr[data-maestro-id="${maestro.id}"]`);
+        
+        if (!row) {
+            // Crear nueva fila si no existe
+            row = document.createElement('tr');
+            row.setAttribute('data-maestro-id', maestro.id);
+            row.setAttribute('data-pago-id', maestro.pago ? maestro.pago.id : '');
+            row.innerHTML = `
+                <td>${maestro.nombre_completo}</td>
+                <td>${maestro.email}</td>
+                <td>${maestro.telefono}</td>
+                <td>${maestro.dni}</td>
+                <td>${getEspecialidadesHTML(maestro.especialidades)}</td>
+                <td>${maestro.documentos_count} documento(s)</td>
+                <td>${getPagoBadgeHTML(maestro.pago)}</td>
+                <td>${getAccionesHTML(maestro.id, !!maestro.pago)}</td>
+            `;
+            tbody.appendChild(row);
+            
+            // Animación para nueva fila
+            row.style.opacity = '0';
+            row.style.transform = 'translateY(-10px)';
+            setTimeout(() => {
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '1';
+                row.style.transform = 'translateY(0)';
+            }, 10);
+        } else {
+            // Actualizar fila existente
+            const pagoCell = row.cells[6]; // Columna de pago
+            const pagoIdActual = row.getAttribute('data-pago-id');
+            const pagoIdNuevo = maestro.pago ? maestro.pago.id : '';
+            
+            // Solo actualizar si el pago cambió
+            if (pagoIdActual !== pagoIdNuevo || !pagoIdActual) {
+                pagoCell.innerHTML = getPagoBadgeHTML(maestro.pago);
+                row.setAttribute('data-pago-id', pagoIdNuevo);
+                
+                // Actualizar botón de pagos si es necesario
+                const accionesCell = row.cells[7];
+                accionesCell.innerHTML = getAccionesHTML(maestro.id, !!maestro.pago);
+                
+                // Efecto visual de actualización
+                pagoCell.style.backgroundColor = '#fff3cd';
+                setTimeout(() => {
+                    pagoCell.style.transition = 'background-color 0.5s ease';
+                    pagoCell.style.backgroundColor = '';
+                }, 500);
+            }
+        }
+    });
+    
+    // Remover maestros que ya no están pendientes (opcional, solo si cambian de estado)
+    // Esto se puede activar si queremos que desaparezcan cuando se validan
+}
+
+// Función para obtener maestros actualizados del servidor
+function obtenerMaestrosActualizados() {
+    fetch('<?php echo BASE_URL; ?>admin/get-maestros-pendientes-actualizados', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.maestros) {
+            actualizarTablaMaestros(data.maestros);
+        }
+    })
+    .catch(error => {
+        console.error('Error al obtener maestros actualizados:', error);
+    });
+}
+
+// Iniciar polling solo en la página de pendientes
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const estado = urlParams.get('estado') || 'pendiente';
+    
+    if (estado === 'pendiente') {
+        // Iniciar polling cada 3 segundos para actualización en tiempo real
+        pollingInterval = setInterval(obtenerMaestrosActualizados, 3000);
+        
+        // Ejecutar inmediatamente
+        obtenerMaestrosActualizados();
+        
+        // Actualizar cuando se vuelve a la pestaña
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                obtenerMaestrosActualizados();
+            }
+        });
+    }
+});
+
+// Limpiar intervalo al salir de la página
+window.addEventListener('beforeunload', function() {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+    }
+});
+<?php endif; ?>
 </script>
 
 <style>

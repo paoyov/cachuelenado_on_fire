@@ -29,9 +29,9 @@ class MaestroController extends Controller {
             if ($pago_reciente && isset($pago_reciente['fecha_expiracion'])) {
                 $fecha_expiracion = strtotime($pago_reciente['fecha_expiracion']);
                 $pago_expirado = $fecha_expiracion < time();
-            } else {
-                $pago_expirado = true; // No hay pago activo
             }
+            // Si no hay pago activo ni pago reciente, NO es expirado, simplemente no tiene pago
+            // Solo es expirado si había un pago activo que ya venció
         } elseif (isset($pago_activo['fecha_expiracion'])) {
             $fecha_expiracion = strtotime($pago_activo['fecha_expiracion']);
             $pago_expirado = $fecha_expiracion < time();
@@ -127,6 +127,14 @@ class MaestroController extends Controller {
             ];
 
             if ($this->maestroModel->update($maestro['id'], $data)) {
+                // Si el perfil estaba rechazado, cambiar a pendiente para nueva validación
+                if ($maestro['estado_perfil'] === 'rechazado') {
+                    $this->maestroModel->validate($maestro['id'], 'pendiente', null, null);
+                    $_SESSION['success'] = 'Perfil actualizado correctamente. Tu perfil ha sido enviado nuevamente para validación.';
+                } else {
+                    $_SESSION['success'] = 'Perfil actualizado correctamente';
+                }
+                
                 // Actualizar datos del usuario
                 $usuarioData = [];
                 if (isset($_POST['nombre_completo'])) {
@@ -158,7 +166,6 @@ class MaestroController extends Controller {
                     }
                 }
 
-                $_SESSION['success'] = 'Perfil actualizado correctamente';
                 redirect('maestro/dashboard');
             } else {
                 $_SESSION['error'] = 'Error al actualizar el perfil';
@@ -343,6 +350,34 @@ class MaestroController extends Controller {
             'pago_expirado' => $pago_expirado
         ];
         $this->view('maestro/configuracion', $data);
+    }
+    
+    /**
+     * API: Verificar estado del perfil (para detectar rechazos en tiempo real)
+     */
+    public function verificarEstadoPerfil() {
+        if (!isLoggedIn() || !isMaestro()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'No autorizado']);
+            exit;
+        }
+
+        $maestro = $this->maestroModel->getByUsuarioId($_SESSION['usuario_id']);
+        if (!$maestro) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Perfil no encontrado']);
+            exit;
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'estado_perfil' => $maestro['estado_perfil'],
+            'motivo_rechazo' => $maestro['motivo_rechazo'] ?? null,
+            'fecha_validacion' => $maestro['fecha_validacion'] ?? null,
+            'rechazado' => $maestro['estado_perfil'] === 'rechazado'
+        ]);
+        exit;
     }
 }
 

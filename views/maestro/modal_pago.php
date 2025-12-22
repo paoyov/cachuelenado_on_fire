@@ -1,5 +1,5 @@
 <!-- Modal de Pago Yape -->
-<div class="modal-pago-overlay" id="modalPagoYape" onclick="if(event.target === this) cerrarModalPago()">
+<div class="modal-pago-overlay" id="modalPagoYape" style="display: none;" onclick="if(event.target === this) cerrarModalPago()">
     <div class="modal-pago-container">
         <div class="modal-pago-content">
             <div class="modal-pago-header">
@@ -141,6 +141,8 @@ function cerrarModalPago() {
     const modal = document.getElementById('modalPagoYape');
     if (modal) {
         modal.style.display = 'none';
+        // Restaurar scroll del body
+        document.body.style.overflow = '';
         // Eliminar el flag de la sesión mediante AJAX
         fetch('<?php echo BASE_URL; ?>pago/cerrar-modal', {
             method: 'POST',
@@ -180,7 +182,302 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Manejar envío del formulario por AJAX
+    const formPago = document.getElementById('formPagoYape');
+    if (formPago) {
+        formPago.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = formPago.querySelector('.btn-pago-submit');
+            const fileInput = document.getElementById('comprobante_imagen');
+            
+            // Validar que se haya subido una imagen
+            if (!fileInput.files || fileInput.files.length === 0) {
+                mostrarAlertaPersonalizada('Por favor, sube una captura de pantalla del pago', 'warning');
+                return;
+            }
+            
+            // Deshabilitar botón
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+            
+            // Crear FormData
+            const formData = new FormData(formPago);
+            
+            // Enviar por AJAX
+            fetch('<?php echo BASE_URL; ?>pago/procesar', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Cerrar modal de pago
+                    cerrarModalPago();
+                    
+                    // Mostrar modal de espera
+                    mostrarModalEspera();
+                    
+                    // Iniciar polling para verificar estado
+                    iniciarPolling();
+                } else {
+                    mostrarAlertaPersonalizada(data.message || 'Error al enviar el comprobante', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Enviar Comprobante';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarAlertaPersonalizada('Error al enviar el comprobante. Por favor, intente nuevamente.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> Enviar Comprobante';
+            });
+        });
+    }
 });
+
+// Función para mostrar modal de espera
+function mostrarModalEspera() {
+    const modalEspera = document.getElementById('modalEsperaValidacion');
+    if (modalEspera) {
+        modalEspera.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Función para cerrar modal de espera
+function cerrarModalEspera() {
+    const modalEspera = document.getElementById('modalEsperaValidacion');
+    if (modalEspera) {
+        modalEspera.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// Polling para verificar estado del pago
+let pollingInterval = null;
+
+function iniciarPolling() {
+    // Verificar cada 3 segundos
+    pollingInterval = setInterval(function() {
+        fetch('<?php echo BASE_URL; ?>pago/verificar-estado', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.verificado) {
+                // Pago verificado, detener polling
+                clearInterval(pollingInterval);
+                
+                // Cerrar modal de espera
+                cerrarModalEspera();
+                
+                // Mostrar mensaje de éxito
+                mostrarMensajeExito();
+                
+                // Recargar página después de 2 segundos
+                setTimeout(function() {
+                    window.location.reload();
+                }, 2000);
+            } else if (data.success && data.estado === 'rechazado') {
+                // Pago rechazado
+                clearInterval(pollingInterval);
+                cerrarModalEspera();
+                mostrarAlertaPersonalizada('Tu pago ha sido rechazado. Por favor, verifica los datos e intenta nuevamente.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error al verificar estado:', error);
+        });
+    }, 3000);
+}
+
+// Función para mostrar mensaje de éxito
+function mostrarMensajeExito() {
+    mostrarAlertaPersonalizada('¡Pago verificado exitosamente! Tu perfil está activo.', 'success');
+}
+
+// Función para mostrar alerta personalizada profesional
+function mostrarAlertaPersonalizada(mensaje, tipo = 'info') {
+    // Tipos: success, error, warning, info
+    const tipos = {
+        success: {
+            icon: 'fa-check-circle',
+            color: '#28a745',
+            bgColor: '#d4edda',
+            borderColor: '#c3e6cb',
+            title: 'Éxito'
+        },
+        error: {
+            icon: 'fa-exclamation-circle',
+            color: '#dc3545',
+            bgColor: '#f8d7da',
+            borderColor: '#f5c6cb',
+            title: 'Error'
+        },
+        warning: {
+            icon: 'fa-exclamation-triangle',
+            color: '#ffc107',
+            bgColor: '#fff3cd',
+            borderColor: '#ffeaa7',
+            title: 'Advertencia'
+        },
+        info: {
+            icon: 'fa-info-circle',
+            color: '#17a2b8',
+            bgColor: '#d1ecf1',
+            borderColor: '#bee5eb',
+            title: 'Información'
+        }
+    };
+    
+    const config = tipos[tipo] || tipos.info;
+    
+    // Crear contenedor de alerta
+    const alerta = document.createElement('div');
+    alerta.className = 'alerta-personalizada alerta-' + tipo;
+    alerta.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10002;
+        min-width: 350px;
+        max-width: 500px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        border-left: 4px solid ${config.color};
+        animation: slideInRight 0.3s ease-out;
+        overflow: hidden;
+    `;
+    
+    alerta.innerHTML = `
+        <div class="alerta-personalizada-content" style="
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+        ">
+            <div class="alerta-icon-wrapper" style="
+                width: 48px;
+                height: 48px;
+                background: ${config.bgColor};
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            ">
+                <i class="fas ${config.icon}" style="
+                    font-size: 1.5rem;
+                    color: ${config.color};
+                "></i>
+            </div>
+            <div class="alerta-text-content" style="flex: 1;">
+                <h4 class="alerta-title" style="
+                    margin: 0 0 0.5rem 0;
+                    font-size: 1rem;
+                    font-weight: 600;
+                    color: #2c3e50;
+                ">${config.title}</h4>
+                <p class="alerta-message" style="
+                    margin: 0;
+                    font-size: 0.95rem;
+                    color: #495057;
+                    line-height: 1.5;
+                ">${mensaje}</p>
+            </div>
+            <button class="alerta-close-btn" onclick="this.parentElement.parentElement.remove()" style="
+                background: none;
+                border: none;
+                color: #6c757d;
+                font-size: 1.25rem;
+                cursor: pointer;
+                padding: 0;
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: color 0.3s ease;
+                flex-shrink: 0;
+            " onmouseover="this.style.color='#dc3545'" onmouseout="this.style.color='#6c757d'">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    // Agregar estilos de animación si no existen
+    if (!document.getElementById('alerta-personalizada-styles')) {
+        const style = document.createElement('style');
+        style.id = 'alerta-personalizada-styles';
+        style.textContent = `
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOutRight {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+            
+            .alerta-personalizada {
+                animation: slideInRight 0.3s ease-out;
+            }
+            
+            .alerta-personalizada.removing {
+                animation: slideOutRight 0.3s ease-out;
+            }
+            
+            .alerta-close-btn:hover {
+                transform: scale(1.1);
+            }
+            
+            @media (max-width: 576px) {
+                .alerta-personalizada {
+                    min-width: calc(100% - 40px);
+                    right: 20px;
+                    left: 20px;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(alerta);
+    
+    // Auto-cerrar después de 5 segundos (excepto para errores críticos)
+    if (tipo !== 'error') {
+        setTimeout(function() {
+            alerta.classList.add('removing');
+            setTimeout(function() {
+                if (alerta.parentElement) {
+                    alerta.remove();
+                }
+            }, 300);
+        }, 5000);
+    }
+}
 </script>
 
 <style>
@@ -196,7 +493,7 @@ document.addEventListener('DOMContentLoaded', function() {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1050;
+    z-index: 9999;
     padding: 20px;
     overflow-y: auto;
 }
@@ -207,6 +504,7 @@ document.addEventListener('DOMContentLoaded', function() {
     max-width: 900px;
     margin: auto;
     position: relative;
+    z-index: 10000;
 }
 
 /* Contenido del Modal */
@@ -216,6 +514,11 @@ document.addEventListener('DOMContentLoaded', function() {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     animation: modalSlideIn 0.3s ease-out;
+    position: relative;
+    z-index: 10001;
+    display: block;
+    visibility: visible;
+    opacity: 1;
 }
 
 @keyframes modalSlideIn {
@@ -731,6 +1034,213 @@ document.addEventListener('DOMContentLoaded', function() {
     .qr-placeholder {
         width: 180px;
         height: 180px;
+    }
+}
+</style>
+
+<!-- Modal de Espera de Validación -->
+<div class="modal-espera-overlay" id="modalEsperaValidacion" style="display: none;">
+    <div class="modal-espera-container">
+        <div class="modal-espera-content">
+            <div class="modal-espera-header">
+                <div class="modal-espera-icon-wrapper">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h3 class="modal-espera-title">Esperando Validación</h3>
+                <p class="modal-espera-subtitle">Tu comprobante está siendo revisado</p>
+            </div>
+            
+            <div class="modal-espera-body">
+                <div class="espera-animation">
+                    <div class="spinner-wrapper">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+                
+                <div class="espera-message">
+                    <p class="espera-text-primary">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Tu comprobante ha sido enviado correctamente</strong>
+                    </p>
+                    <p class="espera-text-secondary">
+                        Un administrador está revisando tu comprobante de pago. 
+                        Este modal se cerrará automáticamente cuando tu pago sea verificado.
+                    </p>
+                    <p class="espera-text-note">
+                        <i class="fas fa-hourglass-half"></i>
+                        Por favor, espera mientras validamos tu pago...
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modal de Espera de Validación */
+.modal-espera-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+}
+
+.modal-espera-container {
+    width: 100%;
+    max-width: 500px;
+    margin: auto;
+}
+
+.modal-espera-content {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+.modal-espera-header {
+    background: linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+}
+
+.modal-espera-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 2.5rem;
+    animation: pulse 2s ease infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+.modal-espera-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.modal-espera-subtitle {
+    margin: 0;
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.modal-espera-body {
+    padding: 2.5rem 2rem;
+    text-align: center;
+}
+
+.espera-animation {
+    margin-bottom: 2rem;
+}
+
+.spinner-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #ff6b35;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.espera-message {
+    text-align: center;
+}
+
+.espera-text-primary {
+    font-size: 1.1rem;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.espera-text-primary i {
+    color: #ff6b35;
+    font-size: 1.3rem;
+}
+
+.espera-text-secondary {
+    font-size: 0.95rem;
+    color: #6c757d;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.espera-text-note {
+    font-size: 0.9rem;
+    color: #ff6b35;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    font-weight: 600;
+}
+
+.espera-text-note i {
+    animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 576px) {
+    .modal-espera-container {
+        max-width: 100%;
+    }
+    
+    .modal-espera-header {
+        padding: 2rem 1.5rem;
+    }
+    
+    .modal-espera-body {
+        padding: 2rem 1.5rem;
+    }
+    
+    .modal-espera-title {
+        font-size: 1.5rem;
     }
 }
 </style>

@@ -42,6 +42,7 @@ $router->addRoute('maestro/disponibilidad', 'MaestroController', 'disponibilidad
 $router->addRoute('maestro/calificaciones', 'MaestroController', 'calificaciones');
 $router->addRoute('maestro/historial', 'MaestroController', 'historial');
 $router->addRoute('maestro/configuracion', 'MaestroController', 'configuracion');
+$router->addRoute('maestro/verificar-estado-perfil', 'MaestroController', 'verificarEstadoPerfil');
 
 // Rutas de administrador
 $router->addRoute('admin/dashboard', 'AdminController', 'dashboard');
@@ -55,11 +56,13 @@ $router->addRoute('admin/reportes-mensuales', 'AdminController', 'reportesMensua
 $router->addRoute('admin/get-maestro-details', 'AdminController', 'getMaestroDetails');
 $router->addRoute('admin/get-maestro-pago', 'AdminController', 'getMaestroPago');
 $router->addRoute('admin/pagos', 'AdminController', 'pagos');
+$router->addRoute('admin/get-maestros-pendientes-actualizados', 'AdminController', 'getMaestrosPendientesActualizados');
 
 // Rutas de pago
 $router->addRoute('pago/procesar', 'PagoController', 'procesarPago');
 $router->addRoute('pago/verificar', 'PagoController', 'verificarPago');
 $router->addRoute('pago/cerrar-modal', 'PagoController', 'cerrarModal');
+$router->addRoute('pago/verificar-estado', 'PagoController', 'verificarEstado');
 
 // Rutas API
 
